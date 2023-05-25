@@ -42,6 +42,4 @@ bin/
 *.class
 /.idea/*
 /.idea/
-
-src/main/resources/application.conf
 .idea
