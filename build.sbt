@@ -1,0 +1,24 @@
+ThisBuild / version := "0.1.0-SNAPSHOT"
+
+ThisBuild / scalaVersion := "2.13.8"
+
+lazy val root = (project in file("."))
+  .settings(
+    name := "akka-streams-restaurants"
+  )
+lazy val akkaVersion = "2.8.2"
+lazy val scalaTestVersion = "3.0.5"
+
+libraryDependencies ++= Seq(
+  "com.typesafe.akka" %% "akka-stream" % akkaVersion,
+  "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion,
+  "com.typesafe.akka" %% "akka-testkit" % akkaVersion,
+  "org.apache.kafka" % "kafka-clients" % "3.0.1",
+  "org.apache.kafka" % "kafka-streams" % "3.0.1",
+  "io.circe" %% "circe-core" % "0.14.1",
+  "io.circe" %% "circe-generic" % "0.14.1",
+  "io.circe" %% "circe-parser" % "0.14.1",
+  "com.goyeau" %% "kafka-streams-circe" % "fbee94b",
+  "com.typesafe.akka" %% "akka-stream-kafka" % "3.1.0-M1",
+  "com.typesafe.akka" %% "akka-slf4j" % "2.8.2"
+)
