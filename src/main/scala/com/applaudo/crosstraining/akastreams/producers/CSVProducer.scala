@@ -47,7 +47,6 @@ object CSVProducer {
       val sourceURLs = data(13)
       val websites = data(14)
 
-
       Restaurant(id, dateAdded, dateUpdated, address, categories, city, country, keys, latitude, longitude,
         name, postalCode, province, sourceURLs, websites)
     }
