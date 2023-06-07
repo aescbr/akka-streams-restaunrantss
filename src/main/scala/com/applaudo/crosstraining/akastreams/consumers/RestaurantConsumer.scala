@@ -15,7 +15,7 @@ object RestaurantConsumer extends App {
   import ProducerActor._
   import akka.kafka.Subscriptions
   import com.applaudo.crosstraining.akastreams.domain.ConsumerClasses._
-  import com.applaudo.crosstraining.akastreams.domain.ConsumerSchemas._
+  import com.applaudo.crosstraining.akastreams.domain.schemas.ConsumerSchemas._
   import com.applaudo.crosstraining.akastreams.domain.ProducerClasses._
 
   implicit val system: ActorSystem = ActorSystem.create("restaurant-consumer")

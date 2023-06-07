@@ -1,7 +1,7 @@
 package com.applaudo.crosstraining.akastreams.domain
 
 object ProducerClasses {
-  import ProducerSchemas._
+  import com.applaudo.crosstraining.akastreams.domain.schemas.ProducerSchemas._
 
   //id,dateAdded,dateUpdated,address,categories,city,country,keys,latitude,longitude,name,postalCode,province,sourceURLs,websites
   case class Restaurant(id: String, dateAdded: String, dateUpdated: String, address: String, categories: String,

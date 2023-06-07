@@ -3,7 +3,7 @@ package com.applaudo.crosstraining.akastreams.actors
 import akka.actor.{Actor, ActorLogging}
 import com.applaudo.crosstraining.akastreams.domain.ConsumerClasses._
 import com.applaudo.crosstraining.akastreams.domain.ProducerClasses._
-import com.applaudo.crosstraining.akastreams.domain.ProducerSchemas._
+import com.applaudo.crosstraining.akastreams.domain.schemas.ProducerSchemas._
 import com.goyeau.kafka.streams.circe.CirceSerdes
 import io.circe.generic.auto._
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
