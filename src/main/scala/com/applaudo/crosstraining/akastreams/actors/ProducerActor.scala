@@ -1,9 +1,9 @@
 package com.applaudo.crosstraining.akastreams.actors
 
-import akka.actor.{Actor, ActorLogging}
-import com.applaudo.crosstraining.akastreams.domain.ConsumerClasses._
-import com.applaudo.crosstraining.akastreams.domain.ProducerClasses._
-import com.applaudo.crosstraining.akastreams.domain.schemas.ProducerSchemas._
+import akka.actor.{Actor, ActorLogging, ActorSystem}
+import com.applaudo.crosstraining.akastreams.models.ConsumerClasses._
+import com.applaudo.crosstraining.akastreams.models.ProducerClasses._
+import com.applaudo.crosstraining.akastreams.models.schemas.ProducerSchemas._
 import com.goyeau.kafka.streams.circe.CirceSerdes
 import io.circe.generic.auto._
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
@@ -49,28 +49,24 @@ object ProducerActor {
 class ProducerActor extends Actor with ActorLogging{
   import ProducerActor._
 
-  implicit val system = context.system
+  implicit val system: ActorSystem = context.system
 
 
   override def receive: Receive = {
     case _: InitStream.type =>
-      log.info("Init stream...")
+      println("Init stream...")
       sender ! Ack
     case restaurant: Restaurant =>
       sendMessage(restaurant)
-
-      log.info(s"sending ${restaurant.id}")
       println(s"sending ${restaurant.id}")
       sender ! Ack
     case restaurantEntitiesMessage: RestaurantEntitiesMessage =>
       sendRestaurantEntities(restaurantEntitiesMessage)
-
-      log.info(s"processing ${restaurantEntitiesMessage.restaurantMessage.payload.id}")
       println(s"processing ${restaurantEntitiesMessage.restaurantMessage.payload.id}")
       sender ! Ack
 
     case _ : Complete.type =>
-      log.info("stream completed!")
+      println("stream completed!")
      // system.terminate()
 
   }

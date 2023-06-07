@@ -1,7 +1,26 @@
-package com.applaudo.crosstraining.akastreams.domain.schemas
+package com.applaudo.crosstraining.akastreams.models.schemas
 
-object ProducerSchemas extends BaseSchema {
-  val restaurantSchema: ProducerSchemas.Schema = Schema(
+object ConsumerSchemas extends BaseSchema {
+
+  val schemaWebsite: Schema =
+    Schema(
+      `type` = "struct",
+      fields = List(
+        SchemaNode(`type` = "string", optional = false, field = "restaurantId"),
+        SchemaNode(`type` = "string", optional = false, field = "site")
+      ),
+      optional = false)
+
+  val schemaURL: Schema =
+    Schema(
+      `type` = "struct",
+      fields = List(
+        SchemaNode(`type` = "string", optional = false, field = "restaurantId"),
+        SchemaNode(`type` = "string", optional = false, field = "url")
+      ),
+      optional = false)
+
+  val restaurantEntitySchema: Schema = Schema(
     `type` = "struct",
     fields = List(
       SchemaNode(`type` = "string", optional = false, field = "id"),
@@ -16,11 +35,10 @@ object ProducerSchemas extends BaseSchema {
       SchemaNode(`type` = "float", optional = false, field = "longitude"),
       SchemaNode(`type` = "string", optional = false, field = "name"),
       SchemaNode(`type` = "string", optional = false, field = "postalCode"),
-      SchemaNode(`type` = "string", optional = false, field = "province"),
-      SchemaNode(`type` = "string", optional = false, field = "sourceURLs"),
-      SchemaNode(`type` = "string", optional = false, field = "websites")
+      SchemaNode(`type` = "string", optional = false, field = "province")
     ),
     optional = false
     //name = "restaurant"
   )
+
 }

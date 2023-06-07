@@ -1,4 +1,4 @@
-package com.applaudo.crosstraining.akastreams.domain.schemas
+package com.applaudo.crosstraining.akastreams.models.schemas
 
 class BaseSchema {
   case class Schema(`type`: String, fields: List[SchemaNode], optional: Boolean)

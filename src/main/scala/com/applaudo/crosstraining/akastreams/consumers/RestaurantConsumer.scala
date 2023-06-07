@@ -6,7 +6,6 @@ import akka.kafka.ConsumerMessage.CommittableMessage
 import akka.kafka.ConsumerSettings
 import akka.kafka.scaladsl.Consumer
 import akka.stream.scaladsl.{Flow, Sink}
-import com.applaudo.crosstraining.akastreams.RestaurantMessageDeserializer
 import com.applaudo.crosstraining.akastreams.actors.ProducerActor
 import org.apache.kafka.common.serialization.StringDeserializer
 
@@ -14,9 +13,9 @@ object RestaurantConsumer extends App {
 
   import ProducerActor._
   import akka.kafka.Subscriptions
-  import com.applaudo.crosstraining.akastreams.domain.ConsumerClasses._
-  import com.applaudo.crosstraining.akastreams.domain.schemas.ConsumerSchemas._
-  import com.applaudo.crosstraining.akastreams.domain.ProducerClasses._
+  import com.applaudo.crosstraining.akastreams.models.ConsumerClasses._
+  import com.applaudo.crosstraining.akastreams.models.schemas.ConsumerSchemas._
+  import com.applaudo.crosstraining.akastreams.models.ProducerClasses._
 
   implicit val system: ActorSystem = ActorSystem.create("restaurant-consumer")
 

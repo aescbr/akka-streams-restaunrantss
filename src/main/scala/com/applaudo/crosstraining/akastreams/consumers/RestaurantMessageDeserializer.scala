@@ -1,6 +1,6 @@
-package com.applaudo.crosstraining.akastreams
+package com.applaudo.crosstraining.akastreams.consumers
 
-import com.applaudo.crosstraining.akastreams.domain.ProducerClasses.RestaurantMessage
+import com.applaudo.crosstraining.akastreams.models.ProducerClasses.RestaurantMessage
 import com.goyeau.kafka.streams.circe.CirceSerdes
 import io.circe.generic.auto._
 import org.apache.kafka.common.serialization.Deserializer

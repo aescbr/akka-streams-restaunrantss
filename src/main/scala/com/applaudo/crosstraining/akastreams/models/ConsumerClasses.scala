@@ -1,7 +1,7 @@
-package com.applaudo.crosstraining.akastreams.domain
+package com.applaudo.crosstraining.akastreams.models
 
 object ConsumerClasses {
-  import com.applaudo.crosstraining.akastreams.domain.schemas.ConsumerSchemas._
+  import com.applaudo.crosstraining.akastreams.models.schemas.ConsumerSchemas._
 
   case class RestaurantWebSite(restaurantId: String, site: String)
   case class RestaurantSourceURL(restaurantId: String, url: String)

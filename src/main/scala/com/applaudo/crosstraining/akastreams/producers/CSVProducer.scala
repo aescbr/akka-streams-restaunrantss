@@ -1,26 +1,27 @@
 package com.applaudo.crosstraining.akastreams.producers
 
 import akka.actor.{ActorSystem, Props}
+import akka.stream.{ActorAttributes, Supervision}
 import akka.stream.scaladsl.{FileIO, Flow, Framing, Sink}
 import akka.util.ByteString
-import com.applaudo.crosstraining.akastreams.actors.ProducerActor
+
 
 import java.nio.file.Paths
 
 object CSVProducer {
-
+  import com.applaudo.crosstraining.akastreams.actors.ProducerActor
+  import com.applaudo.crosstraining.akastreams.services.CSVServiceImpl
+  import com.applaudo.crosstraining.akastreams.models.ProducerClasses.StringToRestaurantMapException
   import ProducerActor._
-  import com.applaudo.crosstraining.akastreams.domain.ProducerClasses._
-
-  implicit val system: ActorSystem = ActorSystem("csv-producer")
 
   def main(args: Array[String]): Unit = {
 
+    implicit val system: ActorSystem = ActorSystem("csv-producer")
 
     val dataCSVFile = Paths.get("src/main/resources/data.csv")
     //val timeCounter = System.nanoTime()
-
     val producerActor = system.actorOf(Props[ProducerActor], "producer-actor")
+    val csvService = new CSVServiceImpl()
 
     val source = FileIO.fromPath(dataCSVFile)
       .via(Framing.delimiter(ByteString("\n"), 1024 * 35, allowTruncation = true))
@@ -28,33 +29,22 @@ object CSVProducer {
         line.utf8String
       }
 
-    val mapRestaurant = Flow[String].map { strLine =>
-      val data = strLine.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)")
-
-      val id = data(0)
-      val dateAdded = data(1)
-      val dateUpdated = data(2)
-      val address = data(3)
-      val categories = data(4)
-      val city = data(5)
-      val country = data(6)
-      val keys = data(7)
-      val latitude = data(8).toDouble
-      val longitude = data(9).toDouble
-      val name = data(10)
-      val postalCode = data(11)
-      val province = data(12)
-      val sourceURLs = data(13)
-      val websites = data(14)
-
-      Restaurant(id, dateAdded, dateUpdated, address, categories, city, country, keys, latitude, longitude,
-        name, postalCode, province, sourceURLs, websites)
+    var num = 0
+    val mapRestaurant = Flow[String].map{ strLine =>
+      num += 1
+      csvService.strToRestaurantWithHandler(num, strLine)
     }
 
     val sink = Sink.actorRefWithBackpressure(producerActor, InitStream, Ack, Complete, StreamFailure)
+    val decider: Supervision.Decider ={
+      case ex : StringToRestaurantMapException =>
+        println(ex.message)
+        Supervision.Resume
+    }
+
     source
       .via(mapRestaurant)
+      .withAttributes(ActorAttributes.supervisionStrategy(decider))
       .runWith(sink)
-
   }
 }
