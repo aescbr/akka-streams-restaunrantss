@@ -6,79 +6,49 @@ import akka.kafka.ConsumerMessage.CommittableMessage
 import akka.kafka.ConsumerSettings
 import akka.kafka.scaladsl.Consumer
 import akka.stream.scaladsl.{Flow, Sink}
+import akka.stream.{ActorAttributes, Supervision}
 import com.applaudo.crosstraining.akastreams.actors.ProducerActor
+import com.applaudo.crosstraining.akastreams.models.ConsumerClasses.RestaurantToEntitiesException
+import com.applaudo.crosstraining.akastreams.services.ConsumerServiceImpl
 import org.apache.kafka.common.serialization.StringDeserializer
 
-object RestaurantConsumer extends App {
+object RestaurantConsumer {
 
   import ProducerActor._
   import akka.kafka.Subscriptions
-  import com.applaudo.crosstraining.akastreams.models.ConsumerClasses._
-  import com.applaudo.crosstraining.akastreams.models.schemas.ConsumerSchemas._
   import com.applaudo.crosstraining.akastreams.models.ProducerClasses._
 
-  implicit val system: ActorSystem = ActorSystem.create("restaurant-consumer")
+  def main(args: Array[String]): Unit = {
 
-  val producerActor = system.actorOf(Props[ProducerActor], "producer-actor")
+    implicit val system: ActorSystem = ActorSystem.create("restaurant-consumer")
 
-  val consumerSettings: ConsumerSettings[String, RestaurantMessage] =
-    ConsumerSettings[String, RestaurantMessage](system, new StringDeserializer, new RestaurantMessageDeserializer)
-      .withBootstrapServers("localhost:9092")
-      .withGroupId("stream-group")
+    val producerActor = system.actorOf(Props[ProducerActor], "producer-actor")
+    val consumerService = new ConsumerServiceImpl()
 
+    val consumerSettings: ConsumerSettings[String, RestaurantMessage] =
+      ConsumerSettings[String, RestaurantMessage](system, new StringDeserializer, new RestaurantMessageDeserializer)
+        .withBootstrapServers("localhost:9092")
+        .withGroupId("stream-group")
 
-  val mapRestaurant: Flow[CommittableMessage[String, RestaurantMessage], RestaurantEntitiesMessage, NotUsed] =
-    Flow[CommittableMessage[String, RestaurantMessage]].map { msg =>
-      val restaurant = msg.record.value().payload
-      RestaurantEntitiesMessage(
-        restaurantToRestaurantEntity(restaurant),
-        restaurantToSourceURLs(restaurant),
-        restaurantToWebsite(restaurant)
-      )
+    val mapRestaurant: Flow[CommittableMessage[String, RestaurantMessage], Any, NotUsed] =
+      Flow[CommittableMessage[String, RestaurantMessage]].map { msg =>
+        val restaurant = msg.record.value().payload
+        consumerService.restaurantToEntities(restaurant)
+      }
+    val sink = Sink.actorRefWithBackpressure(producerActor, InitStream, Ack, Complete, StreamFailure)
+    val decider: Supervision.Decider ={
+      case ex : RestaurantToEntitiesException =>
+        println(ex.message)
+        Supervision.Resume
     }
-  val sink = Sink.actorRefWithBackpressure(producerActor, InitStream, Ack, Complete, StreamFailure)
 
-  val consumer = Consumer
-    .committableSource(consumerSettings, Subscriptions.topics("second-topic"))
-    .via(mapRestaurant)
-    .runWith(sink)
+    //val consumer =
+    Consumer
+      .committableSource(consumerSettings, Subscriptions.topics("second-topic"))
+      .via(mapRestaurant)
+      .withAttributes(ActorAttributes.supervisionStrategy(decider))
+      .runWith(sink)
 
-
-  def restaurantToSourceURLs(restaurant: Restaurant): List[SourceURLMessage] = {
-    val urlsArray = restaurant.sourceURLs.replace("\"", "").split(",")
-    urlsArray.map { url =>
-      SourceURLMessage(
-        schema = schemaURL,
-        payload = RestaurantSourceURL(restaurant.id, url)
-      )
-    }.toList
   }
 
-  def restaurantToWebsite(restaurant: Restaurant): List[WebsiteMessage] = {
-    val urlsArray = restaurant.websites.replace("\"", "").split(",")
-    urlsArray.map { site =>
-      WebsiteMessage(
-        schema = schemaWebsite,
-        payload = RestaurantWebSite(restaurant.id, site)
-      )
-    }.toList
-  }
-
-  def restaurantToRestaurantEntity(restaurant: Restaurant): RestaurantEntityMessage = {
-    RestaurantEntityMessage(restaurantEntitySchema,
-      RestaurantPayload(restaurant.id,
-        restaurant.dateAdded,
-        restaurant.dateUpdated,
-        restaurant.address,
-        restaurant.categories,
-        restaurant.city,
-        restaurant.country,
-        restaurant.keys,
-        restaurant.latitude,
-        restaurant.longitude,
-        restaurant.name,
-        restaurant.postalCode,
-        restaurant.province)
-    )
-  }
 }

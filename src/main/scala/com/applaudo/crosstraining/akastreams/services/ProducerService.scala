@@ -2,11 +2,11 @@ package com.applaudo.crosstraining.akastreams.services
 import com.applaudo.crosstraining.akastreams.models.ProducerClasses._
 
 
-trait CSVService {
+trait ProducerService {
   def strToRestaurantWithHandler(numLine: Integer, line: String): Any
 }
 
-class CSVServiceImpl extends CSVService {
+class ProducerServiceImpl extends ProducerService {
 
   private def strToRestaurant(line: String): Any = {
     val data = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)")

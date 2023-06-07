@@ -10,7 +10,7 @@ import java.nio.file.Paths
 
 object CSVProducer {
   import com.applaudo.crosstraining.akastreams.actors.ProducerActor
-  import com.applaudo.crosstraining.akastreams.services.CSVServiceImpl
+  import com.applaudo.crosstraining.akastreams.services.ProducerServiceImpl
   import com.applaudo.crosstraining.akastreams.models.ProducerClasses.StringToRestaurantMapException
   import ProducerActor._
 
@@ -21,7 +21,7 @@ object CSVProducer {
     val dataCSVFile = Paths.get("src/main/resources/data.csv")
     //val timeCounter = System.nanoTime()
     val producerActor = system.actorOf(Props[ProducerActor], "producer-actor")
-    val csvService = new CSVServiceImpl()
+    val producerService = new ProducerServiceImpl()
 
     val source = FileIO.fromPath(dataCSVFile)
       .via(Framing.delimiter(ByteString("\n"), 1024 * 35, allowTruncation = true))
@@ -32,7 +32,7 @@ object CSVProducer {
     var num = 0
     val mapRestaurant = Flow[String].map{ strLine =>
       num += 1
-      csvService.strToRestaurantWithHandler(num, strLine)
+      producerService.strToRestaurantWithHandler(num, strLine)
     }
 
     val sink = Sink.actorRefWithBackpressure(producerActor, InitStream, Ack, Complete, StreamFailure)

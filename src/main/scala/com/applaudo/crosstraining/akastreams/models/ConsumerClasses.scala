@@ -13,4 +13,6 @@ object ConsumerClasses {
   case class RestaurantEntitiesMessage(restaurantMessage: RestaurantEntityMessage, urls: List[SourceURLMessage],
                                        websites: List[WebsiteMessage])
   case class RestaurantEntityMessage(schema: Schema, payload: RestaurantPayload)
+
+  case class RestaurantToEntitiesException(message: String) extends RuntimeException
 }
