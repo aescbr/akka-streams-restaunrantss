@@ -11,6 +11,7 @@ import com.applaudo.crosstraining.akastreams.actors.ProducerActor
 import com.applaudo.crosstraining.akastreams.models.ConsumerClasses.RestaurantToEntitiesException
 import com.applaudo.crosstraining.akastreams.services.ConsumerServiceImpl
 import org.apache.kafka.common.serialization.StringDeserializer
+import org.slf4j.LoggerFactory
 
 object RestaurantConsumer {
 
@@ -25,6 +26,7 @@ object RestaurantConsumer {
 
     val producerActor = system.actorOf(Props(classOf[ProducerActor], timeCounter), "producer-actor")
     val consumerService = new ConsumerServiceImpl()
+    val log = LoggerFactory.getLogger(getClass)
 
     val consumerSettings: ConsumerSettings[String, RestaurantMessage] =
       ConsumerSettings[String, RestaurantMessage](system, new StringDeserializer, new RestaurantMessageDeserializer)
@@ -39,7 +41,7 @@ object RestaurantConsumer {
     val sink = Sink.actorRefWithBackpressure(producerActor, InitStream, Ack, Complete, StreamFailure)
     val decider: Supervision.Decider ={
       case ex : RestaurantToEntitiesException =>
-        println(ex.message)
+        log.error(ex.message)
         Supervision.Resume
     }
 

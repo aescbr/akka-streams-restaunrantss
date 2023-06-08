@@ -1,9 +1,13 @@
 package com.applaudo.crosstraining.akastreams.services
 import com.applaudo.crosstraining.akastreams.models.ProducerClasses._
+import com.applaudo.crosstraining.akastreams.models.schemas.ProducerSchemas.restaurantSchema
+import com.applaudo.crosstraining.akastreams.producers.CSVProducerConfig.{restaurantProducer, restaurantTopic}
+import org.apache.kafka.clients.producer.ProducerRecord
 
 
 trait ProducerService {
   def strToRestaurantWithHandler(numLine: Integer, line: String): Restaurant
+  def sendMessage(restaurant: Restaurant): Unit
 }
 
 class ProducerServiceImpl extends ProducerService {
@@ -36,5 +40,11 @@ class ProducerServiceImpl extends ProducerService {
         throw StringToRestaurantMapException(s"${ex.getClass.getName} | ${ex.getMessage} - in line: $numLine")
 
     }
+  }
+
+  override def sendMessage(restaurant: Restaurant): Unit = {
+    val value = RestaurantMessage(schema = restaurantSchema, payload = restaurant)
+    val record = new ProducerRecord(restaurantTopic, restaurant.id, value)
+    restaurantProducer.send(record)
   }
 }

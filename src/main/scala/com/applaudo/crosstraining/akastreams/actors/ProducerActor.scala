@@ -22,18 +22,18 @@ class ProducerActor(counter: Long) extends Actor with ActorLogging{
 
   override def receive: Receive = {
     case _: InitStream.type =>
-      println("Init stream...")
+      log.info("Init stream...")
       sender ! Ack
     case restaurant: Restaurant =>
       sendMessage(restaurant)
-      println(s"sending ${restaurant.id}")
+      log.info(s"sending ${restaurant.id}")
       sender ! Ack
     case restaurantEntitiesMessage: RestaurantEntitiesMessage =>
       sendRestaurantEntities(restaurantEntitiesMessage)
-      println(s"processing ${restaurantEntitiesMessage.restaurantMessage.payload.id}")
+      log.info(s"processing ${restaurantEntitiesMessage.restaurantMessage.payload.id}")
       sender ! Ack
     case _ : Complete.type =>
-      println(s"stream completed! in: ${System.nanoTime() - counter}" )
+      log.info(s"stream completed! in: ${System.nanoTime() - counter}" )
 
   }
 
