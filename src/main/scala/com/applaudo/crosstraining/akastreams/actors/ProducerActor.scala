@@ -14,12 +14,11 @@ object ProducerActor {
 }
 
 
-class ProducerActor extends Actor with ActorLogging{
+class ProducerActor(counter: Long) extends Actor with ActorLogging{
   import ProducerActor._
   import com.applaudo.crosstraining.akastreams.producers.CSVProducerConfig._
 
   implicit val system: ActorSystem = context.system
-
 
   override def receive: Receive = {
     case _: InitStream.type =>
@@ -33,17 +32,14 @@ class ProducerActor extends Actor with ActorLogging{
       sendRestaurantEntities(restaurantEntitiesMessage)
       println(s"processing ${restaurantEntitiesMessage.restaurantMessage.payload.id}")
       sender ! Ack
-
     case _ : Complete.type =>
-      println("stream completed!")
-     // system.terminate()
+      println(s"stream completed! in: ${System.nanoTime() - counter}" )
 
   }
 
   def sendMessage(restaurant: Restaurant): Unit = {
     val value = RestaurantMessage(schema = restaurantSchema, payload = restaurant)
     val record = new ProducerRecord(restaurantTopic, restaurant.id, value)
-
     restaurantProducer.send(record)
   }
 
@@ -51,12 +47,11 @@ class ProducerActor extends Actor with ActorLogging{
     val id = restaurantEntitiesMessage.restaurantMessage.payload.id
     val record1 = new ProducerRecord[String, RestaurantEntityMessage](restaurantEntityTopic, id,
       restaurantEntitiesMessage.restaurantMessage)
-
     restaurantEntityProducer.send(record1)
 
     restaurantEntitiesMessage.urls.foreach{url =>
       val recordURL = new ProducerRecord[String, SourceURLMessage](sourceURLTopic, id,url)
-      sourceURLProducer.send(recordURL)
+       sourceURLProducer.send(recordURL)
     }
 
     restaurantEntitiesMessage.websites.foreach{website =>

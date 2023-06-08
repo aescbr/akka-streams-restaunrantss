@@ -21,8 +21,9 @@ object RestaurantConsumer {
   def main(args: Array[String]): Unit = {
 
     implicit val system: ActorSystem = ActorSystem.create("restaurant-consumer")
+    val timeCounter = System.nanoTime()
 
-    val producerActor = system.actorOf(Props[ProducerActor], "producer-actor")
+    val producerActor = system.actorOf(Props(classOf[ProducerActor], timeCounter), "producer-actor")
     val consumerService = new ConsumerServiceImpl()
 
     val consumerSettings: ConsumerSettings[String, RestaurantMessage] =
