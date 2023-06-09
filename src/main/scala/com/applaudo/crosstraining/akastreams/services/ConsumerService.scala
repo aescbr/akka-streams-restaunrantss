@@ -3,7 +3,7 @@ package com.applaudo.crosstraining.akastreams.services
 import com.applaudo.crosstraining.akastreams.models.ProducerClasses.Restaurant
 import com.applaudo.crosstraining.akastreams.models.ConsumerClasses._
 import com.applaudo.crosstraining.akastreams.models.schemas.ConsumerSchemas._
-import com.applaudo.crosstraining.akastreams.config.KafkaBrokerConfig.{restaurantEntityProducer, restaurantEntityTopic, sourceURLProducer, sourceURLTopic, websiteProducer, websiteTopic}
+import com.applaudo.crosstraining.akastreams.config.KafkaBrokerConfig._
 import org.apache.kafka.clients.producer.ProducerRecord
 
 trait ConsumerService {
@@ -20,6 +20,9 @@ class ConsumerServiceImpl extends ConsumerService {
         restaurantToWebsite(restaurant)
       )
     } catch {
+      case ex: NullPointerException =>
+        throw RestaurantToEntitiesException(s"${ex.getClass.getName} " +
+          s"| ${ex.getMessage} - restaurant : $restaurant")
       case ex: RuntimeException =>
         throw RestaurantToEntitiesException(s"${ex.getClass.getName} " +
           s"| ${ex.getMessage} - restaurant id: ${restaurant.id}")

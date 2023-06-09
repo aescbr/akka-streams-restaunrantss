@@ -16,4 +16,10 @@ class ConsumerServiceTest extends BaseServiceTest {
       assert(restaurantEntitiesExpected == result)
     }
   }
+
+  "throw exception when non valid input restaurant" in {
+    val service = optConsumerService.get
+    assertThrows[RestaurantToEntitiesException](service.restaurantToEntities(null))
+  }
+
 }
