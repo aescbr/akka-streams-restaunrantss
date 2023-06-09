@@ -22,5 +22,9 @@ libraryDependencies ++= Seq(
   "com.goyeau" %% "kafka-streams-circe" % "fbee94b",
   "com.typesafe.akka" %% "akka-stream-kafka" % "3.1.0-M1",
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
-  "ch.qos.logback" % "logback-classic" % "1.2.3"
+  "ch.qos.logback" % "logback-classic" % "1.2.3",
+
+  "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
+  "org.scalatest" %% "scalatest" % "3.1.0" % Test,
+  "org.scalatestplus" %% "mockito-4-6" % "3.2.15.0" % "test"
 )
