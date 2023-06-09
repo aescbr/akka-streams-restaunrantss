@@ -3,9 +3,12 @@ package com.applaudo.crosstraining.akastreams.services
 import com.applaudo.crosstraining.akastreams.models.ProducerClasses.Restaurant
 import com.applaudo.crosstraining.akastreams.models.ConsumerClasses._
 import com.applaudo.crosstraining.akastreams.models.schemas.ConsumerSchemas._
+import com.applaudo.crosstraining.akastreams.config.KafkaBrokerConfig.{restaurantEntityProducer, restaurantEntityTopic, sourceURLProducer, sourceURLTopic, websiteProducer, websiteTopic}
+import org.apache.kafka.clients.producer.ProducerRecord
 
 trait ConsumerService {
   def restaurantToEntities(restaurant: Restaurant): Any
+  def sendRestaurantEntities(restaurantEntitiesMessage: RestaurantEntitiesMessage):Unit
 }
 
 class ConsumerServiceImpl extends ConsumerService {
@@ -59,5 +62,22 @@ class ConsumerServiceImpl extends ConsumerService {
         restaurant.postalCode,
         restaurant.province)
     )
+  }
+
+  override def sendRestaurantEntities(restaurantEntitiesMessage: RestaurantEntitiesMessage):Unit = {
+    val id = restaurantEntitiesMessage.restaurantMessage.payload.id
+    val record1 = new ProducerRecord[String, RestaurantEntityMessage](restaurantEntityTopic, id,
+      restaurantEntitiesMessage.restaurantMessage)
+    restaurantEntityProducer.send(record1)
+
+    restaurantEntitiesMessage.urls.foreach{url =>
+      val recordURL = new ProducerRecord[String, SourceURLMessage](sourceURLTopic, id,url)
+      sourceURLProducer.send(recordURL)
+    }
+
+    restaurantEntitiesMessage.websites.foreach{website =>
+      val recordWebsite = new ProducerRecord[String, WebsiteMessage](websiteTopic, id,website)
+      websiteProducer.send(recordWebsite)
+    }
   }
 }

@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorLogging, ActorSystem}
 import com.applaudo.crosstraining.akastreams.models.ConsumerClasses._
 import com.applaudo.crosstraining.akastreams.models.ProducerClasses._
 import com.applaudo.crosstraining.akastreams.models.schemas.ProducerSchemas._
+import com.applaudo.crosstraining.akastreams.services.{ConsumerServiceImpl, ProducerServiceImpl}
 import org.apache.kafka.clients.producer.ProducerRecord
 
 object ProducerActor {
@@ -16,48 +17,27 @@ object ProducerActor {
 
 class ProducerActor(counter: Long) extends Actor with ActorLogging{
   import ProducerActor._
-  import com.applaudo.crosstraining.akastreams.producers.CSVProducerConfig._
+  import com.applaudo.crosstraining.akastreams.config.KafkaBrokerConfig._
 
   implicit val system: ActorSystem = context.system
+  val producerService = new ProducerServiceImpl()
+  val consumerService = new ConsumerServiceImpl()
+
 
   override def receive: Receive = {
     case _: InitStream.type =>
       log.info("Init stream...")
       sender ! Ack
     case restaurant: Restaurant =>
-      sendMessage(restaurant)
+      producerService.sendMessage(restaurant)
       log.info(s"sending ${restaurant.id}")
       sender ! Ack
     case restaurantEntitiesMessage: RestaurantEntitiesMessage =>
-      sendRestaurantEntities(restaurantEntitiesMessage)
+      consumerService.sendRestaurantEntities(restaurantEntitiesMessage)
       log.info(s"processing ${restaurantEntitiesMessage.restaurantMessage.payload.id}")
       sender ! Ack
     case _ : Complete.type =>
       log.info(s"stream completed! in: ${System.nanoTime() - counter}" )
-
   }
 
-  def sendMessage(restaurant: Restaurant): Unit = {
-    val value = RestaurantMessage(schema = restaurantSchema, payload = restaurant)
-    val record = new ProducerRecord(restaurantTopic, restaurant.id, value)
-    restaurantProducer.send(record)
-  }
-
-  def sendRestaurantEntities(restaurantEntitiesMessage: RestaurantEntitiesMessage):Unit = {
-    val id = restaurantEntitiesMessage.restaurantMessage.payload.id
-    val record1 = new ProducerRecord[String, RestaurantEntityMessage](restaurantEntityTopic, id,
-      restaurantEntitiesMessage.restaurantMessage)
-    restaurantEntityProducer.send(record1)
-
-    restaurantEntitiesMessage.urls.foreach{url =>
-      val recordURL = new ProducerRecord[String, SourceURLMessage](sourceURLTopic, id,url)
-       sourceURLProducer.send(recordURL)
-    }
-
-    restaurantEntitiesMessage.websites.foreach{website =>
-      val recordWebsite = new ProducerRecord[String, WebsiteMessage](websiteTopic, id,website)
-      websiteProducer.send(recordWebsite)
-    }
-
-  }
 }
