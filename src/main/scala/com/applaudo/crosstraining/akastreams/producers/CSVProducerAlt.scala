@@ -28,8 +28,7 @@ object CSVProducerAlt {
     val producerService = new ProducerServiceImpl()
 
     val source = FileIO.fromPath(dataCSVFile)
-      .via(Framing.delimiter(ByteString("\n"), 1024 * 35, allowTruncation = true))
-      .via(CsvParsing.lineScanner())
+      .via(CsvParsing.lineScanner(maximumLineLength = 1024 * 35))
       .map(_.map(_.utf8String))
 
 
@@ -54,7 +53,7 @@ object CSVProducerAlt {
       .runWith(simpleSink)
 
     stream.onComplete{
-      case Success(_) => println(s"stream completed in: ${System.nanoTime() - timeCounter}")
+      case Success(_) => println(s"stream completed in: ${System.nanoTime() - timeCounter} line processed $lineNum")
       case Failure(exception) => println(s"${exception.getMessage}")
     }
   }
