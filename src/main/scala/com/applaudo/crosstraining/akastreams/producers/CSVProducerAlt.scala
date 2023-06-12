@@ -1,10 +1,12 @@
 package com.applaudo.crosstraining.akastreams.producers
 
 import akka.Done
-import akka.actor.{ActorSystem, Props}
-import akka.stream.{ActorAttributes, Supervision}
+import akka.actor.ActorSystem
+import akka.stream.alpakka.csv.scaladsl.CsvParsing
 import akka.stream.scaladsl.{FileIO, Flow, Framing, Sink}
+import akka.stream.{ActorAttributes, Supervision}
 import akka.util.ByteString
+import com.applaudo.crosstraining.akastreams.services.ProducerServiceImpl
 import org.slf4j.LoggerFactory
 
 import java.nio.file.Paths
@@ -12,37 +14,31 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
+object CSVProducerAlt {
 
-object CSVProducer {
-  import com.applaudo.crosstraining.akastreams.actors.ProducerActor
-  import com.applaudo.crosstraining.akastreams.services.ProducerServiceImpl
   import com.applaudo.crosstraining.akastreams.models.ProducerClasses._
-  import ProducerActor._
 
   def main(args: Array[String]): Unit = {
-
     implicit val system: ActorSystem = ActorSystem("csv-producer")
 
     val dataCSVFile = Paths.get("src/main/resources/data.csv")
     val timeCounter = System.nanoTime()
     val log = LoggerFactory.getLogger(getClass)
 
-    //val producerActor = system.actorOf(Props(classOf[ProducerActor], timeCounter), "producer-actor")
     val producerService = new ProducerServiceImpl()
 
     val source = FileIO.fromPath(dataCSVFile)
       .via(Framing.delimiter(ByteString("\n"), 1024 * 35, allowTruncation = true))
-      .map { line =>
-        line.utf8String
-      }
+      .via(CsvParsing.lineScanner())
+      .map(_.map(_.utf8String))
+
 
     var lineNum = 0
-    val mapRestaurant = Flow[String].map{ strLine =>
+    val mapRestaurant = Flow[List[String]].map{ list =>
       lineNum += 1
-      producerService.strToRestaurantWithHandler(lineNum, Left(strLine))
+      producerService.strToRestaurantWithHandler(lineNum, Right(list))
     }
 
-    //val actorSink = Sink.actorRefWithBackpressure(producerActor, InitStream, Ack, Complete, StreamFailure)
     val decider: Supervision.Decider ={
       case ex : StringToRestaurantMapException =>
         log.error(ex.message)
@@ -52,17 +48,14 @@ object CSVProducer {
     val simpleSink: Sink[Restaurant, Future[Done]] = Sink.foreach(producerService.sendMessage)
 
     val stream  =
-      source
+    source
       .via(mapRestaurant)
       .withAttributes(ActorAttributes.supervisionStrategy(decider))
       .runWith(simpleSink)
 
-    stream.onComplete {
-      case Failure(exception) =>
-        log.info(s"${exception.getMessage}")
-      case Success(_) =>
-        log.info(s"stream completed in:${System.nanoTime() - timeCounter}" )
+    stream.onComplete{
+      case Success(_) => println(s"stream completed in: ${System.nanoTime() - timeCounter}")
+      case Failure(exception) => println(s"${exception.getMessage}")
     }
   }
-
 }

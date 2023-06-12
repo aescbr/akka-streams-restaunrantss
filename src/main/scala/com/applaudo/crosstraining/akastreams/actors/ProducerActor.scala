@@ -3,9 +3,7 @@ package com.applaudo.crosstraining.akastreams.actors
 import akka.actor.{Actor, ActorLogging, ActorSystem}
 import com.applaudo.crosstraining.akastreams.models.ConsumerClasses._
 import com.applaudo.crosstraining.akastreams.models.ProducerClasses._
-import com.applaudo.crosstraining.akastreams.models.schemas.ProducerSchemas._
 import com.applaudo.crosstraining.akastreams.services.{ConsumerServiceImpl, ProducerServiceImpl}
-import org.apache.kafka.clients.producer.ProducerRecord
 
 object ProducerActor {
   case object InitStream
@@ -17,7 +15,6 @@ object ProducerActor {
 
 class ProducerActor(counter: Long) extends Actor with ActorLogging{
   import ProducerActor._
-  import com.applaudo.crosstraining.akastreams.config.KafkaBrokerConfig._
 
   implicit val system: ActorSystem = context.system
   val producerService = new ProducerServiceImpl()

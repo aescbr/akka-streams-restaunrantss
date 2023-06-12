@@ -21,8 +21,10 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-parser" % "0.14.1" ,
   "com.goyeau" %% "kafka-streams-circe" % "fbee94b",
   "com.typesafe.akka" %% "akka-stream-kafka" % "3.1.0-M1",
+  "com.lightbend.akka" %% "akka-stream-alpakka-csv" % "6.0.1",
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
   "ch.qos.logback" % "logback-classic" % "1.2.3",
+  "com.typesafe" % "config" % "1.4.2",
 
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
   "org.scalatest" %% "scalatest" % "3.1.0" % Test,

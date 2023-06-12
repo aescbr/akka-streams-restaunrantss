@@ -1,44 +1,23 @@
 package com.applaudo.crosstraining.akastreams.config
 
-import com.applaudo.crosstraining.akastreams.models.ConsumerClasses.{RestaurantEntityMessage, SourceURLMessage, WebsiteMessage}
-import com.applaudo.crosstraining.akastreams.models.ProducerClasses.RestaurantMessage
-import com.goyeau.kafka.streams.circe.CirceSerdes
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig}
-import io.circe.generic.auto._
-
+import com.typesafe.config.ConfigFactory
+import org.apache.kafka.clients.producer.ProducerConfig
 
 import java.util.Properties
 
 object KafkaBrokerConfig {
-  val brokerHost = "localhost"
-  val brokerPort = "9092"
-  val groupId = "stream-group"
-  val restaurantTopic = "first-topic"
-  val sourceRestaurantTopic = "second-topic"
-  val restaurantEntityTopic = "stream-output-topic"
-  val sourceURLTopic = "stream-output-topic2"
-  val websiteTopic = "stream-output-topic3"
 
-  val props: Properties = new Properties()
-  props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, s"$brokerHost:$brokerPort")
+  private val conf = ConfigFactory.load().getConfig("brokerConfig")
 
-  val restaurantProducer = new KafkaProducer(props,
-    CirceSerdes.serializer[String],
-    CirceSerdes.serializer[RestaurantMessage]
-  )
+  val brokerHost: String = conf.getString("brokerHost")
+  val brokerPort: String = conf.getString("brokerPort")
+  val groupId: String = conf.getString("groupId")
+  val restaurantTopic: String = conf.getString("restaurantTopic")
+  val sourceRestaurantTopic: String = conf.getString("sourceRestaurantTopic")
+  val restaurantEntityTopic: String = conf.getString("restaurantEntityTopic")
+  val sourceURLTopic: String = conf.getString("sourceURLTopic")
+  val websiteTopic: String = conf.getString("websiteTopic")
 
-  val restaurantEntityProducer = new KafkaProducer(props,
-    CirceSerdes.serializer[String],
-    CirceSerdes.serializer[RestaurantEntityMessage]
-  )
-
-  val sourceURLProducer = new KafkaProducer(props,
-    CirceSerdes.serializer[String],
-    CirceSerdes.serializer[SourceURLMessage],
-  )
-
-  val websiteProducer = new KafkaProducer(props,
-    CirceSerdes.serializer[String],
-    CirceSerdes.serializer[WebsiteMessage],
-  )
+  val brokerProps: Properties = new Properties()
+  brokerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, s"$brokerHost:$brokerPort")
 }

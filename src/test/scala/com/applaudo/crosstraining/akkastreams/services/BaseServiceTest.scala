@@ -24,6 +24,13 @@ class BaseServiceTest extends TestKit(ActorSystem("system"))
       "us/ooh/hello/1232world/-1161002137,39.80607,-84.03013,restaurant,12345,OOH," +
       "\"https://sourceURL1.com/menu,https://sourceURL2.com/menu\",http://webiste1.com"
 
+  val inputRestaurantList: List[String] =
+    List("id", "2017-06-19T16:06:25Z", "2018-04-07T23:40:34Z","1232 main street", "Fast Food", "city", "US",
+      "us/ooh/hello/1232world/-1161002137", "39.80607","-84.03013", "restaurant", "12345", "OOH",
+      "\"https://sourceURL1.com/menu,https://sourceURL2.com/menu\"", "http://webiste1.com")
+
+  val nonValidRestaurantInputList: List[String] = List("abc", "123456")
+
   val restaurantExpected : Restaurant = Restaurant(
     id="id",
     dateAdded="2017-06-19T16:06:25Z",
@@ -42,7 +49,7 @@ class BaseServiceTest extends TestKit(ActorSystem("system"))
     websites= "http://webiste1.com"
   )
 
-  val restaurantPayload: RestaurantPayload = RestaurantPayload(
+    val restaurantPayload: RestaurantPayload = RestaurantPayload(
     restaurantExpected.id,
     restaurantExpected.dateAdded,
     restaurantExpected.dateUpdated,
