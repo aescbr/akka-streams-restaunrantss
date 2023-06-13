@@ -1,12 +1,17 @@
 package com.applaudo.crosstraining.akkastreams.services
 
-import com.applaudo.crosstraining.akastreams.models.ProducerClasses.StringToRestaurantMapException
+import com.applaudo.crosstraining.akastreams.models.ProducerClasses.{RestaurantMessage, StringToRestaurantMapException}
 import com.applaudo.crosstraining.akastreams.services.ProducerServiceImpl
+import org.apache.kafka.clients.producer.KafkaProducer
+import org.scalatestplus.mockito.MockitoSugar
 
-class ProducerServiceTest  extends BaseServiceTest {
+class ProducerServiceTest  extends BaseServiceTest
+with MockitoSugar {
 
   override def beforeAll(): Unit = {
-    optProducerService = Some(new ProducerServiceImpl())
+    val mockProducer: KafkaProducer[String, RestaurantMessage] = mock[KafkaProducer[String, RestaurantMessage]]
+    optProducerService = Some(
+      ProducerServiceImpl(mockProducer))
   }
 
   "producer service" should {
