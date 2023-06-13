@@ -3,9 +3,8 @@ package com.applaudo.crosstraining.akastreams.producers
 import akka.Done
 import akka.actor.ActorSystem
 import akka.stream.alpakka.csv.scaladsl.CsvParsing
-import akka.stream.scaladsl.{FileIO, Flow, Framing, Sink}
+import akka.stream.scaladsl.{FileIO, Flow, Sink}
 import akka.stream.{ActorAttributes, Supervision}
-import akka.util.ByteString
 import com.applaudo.crosstraining.akastreams.services.ProducerServiceImpl
 import org.slf4j.LoggerFactory
 
@@ -16,6 +15,7 @@ import scala.util.{Failure, Success}
 
 object CSVProducerAlt {
 
+  import com.applaudo.crosstraining.akastreams.config.KafkaBrokerConfig._
   import com.applaudo.crosstraining.akastreams.models.ProducerClasses._
 
   def main(args: Array[String]): Unit = {
@@ -24,8 +24,7 @@ object CSVProducerAlt {
     val dataCSVFile = Paths.get("src/main/resources/data.csv")
     val timeCounter = System.nanoTime()
     val log = LoggerFactory.getLogger(getClass)
-
-    val producerService = new ProducerServiceImpl()
+    val producerService = ProducerServiceImpl(restaurantProducer)
 
     val source = FileIO.fromPath(dataCSVFile)
       .via(CsvParsing.lineScanner(maximumLineLength = 1024 * 35))

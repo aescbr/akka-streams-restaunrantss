@@ -1,7 +1,11 @@
 package com.applaudo.crosstraining.akastreams.config
 
+import com.applaudo.crosstraining.akastreams.models.ConsumerClasses.{RestaurantEntityMessage, SourceURLMessage, WebsiteMessage}
+import com.applaudo.crosstraining.akastreams.models.ProducerClasses.RestaurantMessage
+import com.goyeau.kafka.streams.circe.CirceSerdes
 import com.typesafe.config.ConfigFactory
-import org.apache.kafka.clients.producer.ProducerConfig
+import io.circe.generic.auto._
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig}
 
 import java.util.Properties
 
@@ -20,4 +24,24 @@ object KafkaBrokerConfig {
 
   val brokerProps: Properties = new Properties()
   brokerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, s"$brokerHost:$brokerPort")
+
+  val restaurantProducer = new KafkaProducer[String,RestaurantMessage](brokerProps,
+    CirceSerdes.serializer[String],
+    CirceSerdes.serializer[RestaurantMessage])
+
+  val restaurantEntityProducer = new KafkaProducer(brokerProps,
+    CirceSerdes.serializer[String],
+    CirceSerdes.serializer[RestaurantEntityMessage]
+  )
+
+  val sourceURLProducer = new KafkaProducer(brokerProps,
+    CirceSerdes.serializer[String],
+    CirceSerdes.serializer[SourceURLMessage],
+  )
+
+  val websiteProducer = new KafkaProducer(brokerProps,
+    CirceSerdes.serializer[String],
+    CirceSerdes.serializer[WebsiteMessage],
+  )
+
 }

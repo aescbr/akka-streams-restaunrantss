@@ -11,15 +11,10 @@ object ProducerActor {
   case object Complete
   final case class StreamFailure(ex: Throwable)
 }
-
-
-class ProducerActor(counter: Long) extends Actor with ActorLogging{
+class ProducerActor(counter: Long, producerService: ProducerServiceImpl,
+                    consumerService: ConsumerServiceImpl) extends Actor with ActorLogging{
   import ProducerActor._
-
   implicit val system: ActorSystem = context.system
-  val producerService = new ProducerServiceImpl()
-  val consumerService = new ConsumerServiceImpl()
-
 
   override def receive: Receive = {
     case _: InitStream.type =>

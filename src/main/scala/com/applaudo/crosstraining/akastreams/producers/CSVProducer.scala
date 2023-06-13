@@ -13,11 +13,13 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
 
+
 object CSVProducer {
   import com.applaudo.crosstraining.akastreams.actors.ProducerActor
-  import com.applaudo.crosstraining.akastreams.services.ProducerServiceImpl
   import com.applaudo.crosstraining.akastreams.models.ProducerClasses._
-  import ProducerActor._
+  import com.applaudo.crosstraining.akastreams.config.KafkaBrokerConfig._
+  import com.applaudo.crosstraining.akastreams.services.ConsumerServiceImpl
+  import com.applaudo.crosstraining.akastreams.services.ProducerServiceImpl
 
   def main(args: Array[String]): Unit = {
 
@@ -26,9 +28,11 @@ object CSVProducer {
     val dataCSVFile = Paths.get("src/main/resources/data.csv")
     val timeCounter = System.nanoTime()
     val log = LoggerFactory.getLogger(getClass)
-
-    //val producerActor = system.actorOf(Props(classOf[ProducerActor], timeCounter), "producer-actor")
-    val producerService = new ProducerServiceImpl()
+    val producerService = ProducerServiceImpl(restaurantProducer)
+//    val consumerService = ConsumerServiceImpl(restaurantEntityProducer, sourceURLProducer, websiteProducer)
+//
+//    val producerActor = system.actorOf(
+//     Props(classOf[ProducerActor], timeCounter, producerService, consumerService), "producer-actor")
 
     val source = FileIO.fromPath(dataCSVFile)
       .via(Framing.delimiter(ByteString("\n"), 1024 * 35, allowTruncation = true))
@@ -64,5 +68,4 @@ object CSVProducer {
         log.info(s"stream completed in:${System.nanoTime() - timeCounter}" )
     }
   }
-
 }

@@ -1,33 +1,19 @@
 package com.applaudo.crosstraining.akastreams.services
 
-import com.applaudo.crosstraining.akastreams.models.ProducerClasses.Restaurant
-import com.applaudo.crosstraining.akastreams.models.ConsumerClasses._
-import com.applaudo.crosstraining.akastreams.models.schemas.ConsumerSchemas._
 import com.applaudo.crosstraining.akastreams.config.KafkaBrokerConfig._
-import com.goyeau.kafka.streams.circe.CirceSerdes
+import com.applaudo.crosstraining.akastreams.models.ConsumerClasses._
+import com.applaudo.crosstraining.akastreams.models.ProducerClasses.Restaurant
+import com.applaudo.crosstraining.akastreams.models.schemas.ConsumerSchemas._
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
-import io.circe.generic.auto._
 
 trait ConsumerService {
   def restaurantToEntities(restaurant: Restaurant): Any
   def sendRestaurantEntities(restaurantEntitiesMessage: RestaurantEntitiesMessage):Unit
 }
 
-class ConsumerServiceImpl extends ConsumerService {
-  val restaurantEntityProducer = new KafkaProducer(brokerProps,
-    CirceSerdes.serializer[String],
-    CirceSerdes.serializer[RestaurantEntityMessage]
-  )
-
-  val sourceURLProducer = new KafkaProducer(brokerProps,
-    CirceSerdes.serializer[String],
-    CirceSerdes.serializer[SourceURLMessage],
-  )
-
-  val websiteProducer = new KafkaProducer(brokerProps,
-    CirceSerdes.serializer[String],
-    CirceSerdes.serializer[WebsiteMessage],
-  )
+case class ConsumerServiceImpl(restaurantEntityProducer: KafkaProducer[String, RestaurantEntityMessage],
+                               sourceURLProducer: KafkaProducer[String, SourceURLMessage],
+                               websiteProducer: KafkaProducer[String, WebsiteMessage]) extends ConsumerService {
 
   override def restaurantToEntities(restaurant: Restaurant): Any = {
     try{

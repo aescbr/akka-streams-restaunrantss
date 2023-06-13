@@ -1,9 +1,7 @@
 package com.applaudo.crosstraining.akastreams.services
-import com.applaudo.crosstraining.akastreams.config.KafkaBrokerConfig.{brokerProps, restaurantTopic}
+import com.applaudo.crosstraining.akastreams.config.KafkaBrokerConfig.restaurantTopic
 import com.applaudo.crosstraining.akastreams.models.ProducerClasses._
 import com.applaudo.crosstraining.akastreams.models.schemas.ProducerSchemas.restaurantSchema
-import com.goyeau.kafka.streams.circe.CirceSerdes
-import io.circe.generic.auto._
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 
 
@@ -12,12 +10,8 @@ trait ProducerService {
   def sendMessage(restaurant: Restaurant): Unit
 }
 
-class ProducerServiceImpl extends ProducerService {
-
-  val restaurantProducer = new KafkaProducer(brokerProps,
-    CirceSerdes.serializer[String],
-    CirceSerdes.serializer[RestaurantMessage]
-  )
+case class ProducerServiceImpl(
+  restaurantProducer: KafkaProducer[String, RestaurantMessage]) extends ProducerService {
 
   override def strToRestaurantWithHandler(numLine: Integer, input: Either[String, List[String]]): Restaurant = {
     try {
@@ -32,7 +26,6 @@ class ProducerServiceImpl extends ProducerService {
     catch {
       case ex: RuntimeException =>
         throw StringToRestaurantMapException(s"${ex.getClass.getName} | ${ex.getMessage} - in line: $numLine")
-
     }
   }
 

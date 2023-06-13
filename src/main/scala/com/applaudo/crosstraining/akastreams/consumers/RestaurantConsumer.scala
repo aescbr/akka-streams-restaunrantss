@@ -9,7 +9,7 @@ import akka.stream.scaladsl.{Flow, Sink}
 import akka.stream.{ActorAttributes, Supervision}
 import com.applaudo.crosstraining.akastreams.actors.ProducerActor
 import com.applaudo.crosstraining.akastreams.models.ConsumerClasses.RestaurantToEntitiesException
-import com.applaudo.crosstraining.akastreams.services.ConsumerServiceImpl
+import com.applaudo.crosstraining.akastreams.services.{ConsumerServiceImpl, ProducerServiceImpl}
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.slf4j.LoggerFactory
 
@@ -24,9 +24,12 @@ object RestaurantConsumer {
 
     implicit val system: ActorSystem = ActorSystem.create("restaurant-consumer")
     val timeCounter = System.nanoTime()
+    val producerService = ProducerServiceImpl(restaurantProducer)
+    val consumerService = ConsumerServiceImpl(restaurantEntityProducer, sourceURLProducer, websiteProducer)
 
-    val producerActor = system.actorOf(Props(classOf[ProducerActor], timeCounter), "producer-actor")
-    val consumerService = new ConsumerServiceImpl()
+    val producerActor = system.actorOf(Props(classOf[ProducerActor], timeCounter,
+      producerService, consumerService), "producer-actor")
+
     val log = LoggerFactory.getLogger(getClass)
 
     val consumerSettings: ConsumerSettings[String, RestaurantMessage] =
@@ -53,7 +56,5 @@ object RestaurantConsumer {
       .via(mapRestaurant)
       .withAttributes(ActorAttributes.supervisionStrategy(decider))
       .runWith(sink)
-
   }
-
 }
