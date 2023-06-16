@@ -51,6 +51,9 @@ object CSVProducer {
       case ex : StringToRestaurantMapException =>
         log.error(ex.message)
         Supervision.Resume
+      case _ =>
+        log.error("Unexpected error-")
+        Supervision.Resume
     }
 
     val simpleSink: Sink[Restaurant, Future[Done]] = Sink.foreach(producerService.sendMessage)

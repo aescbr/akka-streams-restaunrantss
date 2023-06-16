@@ -3,7 +3,7 @@ package com.applaudo.crosstraining.akastreams.actors
 import akka.actor.{Actor, ActorLogging, ActorSystem}
 import com.applaudo.crosstraining.akastreams.models.ConsumerClasses._
 import com.applaudo.crosstraining.akastreams.models.ProducerClasses._
-import com.applaudo.crosstraining.akastreams.services.{ConsumerServiceImpl, ProducerServiceImpl}
+import com.applaudo.crosstraining.akastreams.services.{ConsumerService, ProducerService}
 
 object ProducerActor {
   case object InitStream
@@ -11,8 +11,8 @@ object ProducerActor {
   case object Complete
   final case class StreamFailure(ex: Throwable)
 }
-class ProducerActor(counter: Long, producerService: ProducerServiceImpl,
-                    consumerService: ConsumerServiceImpl) extends Actor with ActorLogging{
+class ProducerActor(counter: Long, producerService: ProducerService,
+                    consumerService: ConsumerService) extends Actor with ActorLogging{
   import ProducerActor._
   implicit val system: ActorSystem = context.system
 
