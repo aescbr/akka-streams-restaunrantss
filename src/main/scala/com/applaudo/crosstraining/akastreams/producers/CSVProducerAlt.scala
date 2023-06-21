@@ -30,7 +30,6 @@ object CSVProducerAlt {
       .via(CsvParsing.lineScanner(maximumLineLength = 1024 * 35))
       .map(_.map(_.utf8String))
 
-
     var lineNum = 0
     val mapRestaurant = Flow[List[String]].map{ list =>
       lineNum += 1
@@ -52,8 +51,8 @@ object CSVProducerAlt {
       .runWith(simpleSink)
 
     stream.onComplete{
-      case Success(_) => println(s"stream completed in: ${System.nanoTime() - timeCounter} line processed $lineNum")
-      case Failure(exception) => println(s"${exception.getMessage}")
+      case Success(_) => log.info(s"stream completed in: ${System.nanoTime() - timeCounter} line processed $lineNum")
+      case Failure(exception) => log.error(s"${exception.getMessage}")
     }
   }
 }

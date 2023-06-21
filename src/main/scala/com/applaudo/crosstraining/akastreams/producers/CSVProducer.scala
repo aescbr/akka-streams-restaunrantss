@@ -1,74 +1,66 @@
 package com.applaudo.crosstraining.akastreams.producers
 
-import akka.Done
-import akka.actor.{ActorSystem, Props}
+import akka.actor.{ActorRef, ActorSystem}
+import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.stream.{ActorAttributes, Supervision}
-import akka.stream.scaladsl.{FileIO, Flow, Framing, Sink}
-import akka.util.ByteString
-import org.slf4j.LoggerFactory
+import akka.{Done, NotUsed}
+import org.slf4j.{Logger, LoggerFactory}
 
-import java.nio.file.Paths
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
 
+class CSVProducer()(implicit system: ActorSystem) {
 
-object CSVProducer {
-  import com.applaudo.crosstraining.akastreams.actors.ProducerActor
+  import com.applaudo.crosstraining.akastreams.actors.ProducerActor._
   import com.applaudo.crosstraining.akastreams.models.ProducerClasses._
-  import com.applaudo.crosstraining.akastreams.config.KafkaBrokerConfig._
-  import com.applaudo.crosstraining.akastreams.services.ConsumerServiceImpl
-  import com.applaudo.crosstraining.akastreams.services.ProducerServiceImpl
+  import com.applaudo.crosstraining.akastreams.services.ProducerService
 
-  def main(args: Array[String]): Unit = {
+  val log: Logger = LoggerFactory.getLogger(getClass)
+  var lineNum = 0
 
-    implicit val system: ActorSystem = ActorSystem("csv-producer")
+  def processCSVWithActor(source: Source[String, Any], producerActor: ActorRef,
+                          producerService: ProducerService): Any = {
+    val actorSink: Sink[Restaurant, NotUsed] = Sink.actorRefWithBackpressure(producerActor, InitStream,
+      Ack, Complete, StreamFailure)
+    processCSV(source, System.nanoTime(), producerService, actorSink)
+  }
 
-    val dataCSVFile = Paths.get("src/main/resources/data.csv")
-    val timeCounter = System.nanoTime()
-    val log = LoggerFactory.getLogger(getClass)
-    val producerService = ProducerServiceImpl(restaurantProducer)
-//    val consumerService = ConsumerServiceImpl(restaurantEntityProducer, sourceURLProducer, websiteProducer)
-//
-//    val producerActor = system.actorOf(
-//     Props(classOf[ProducerActor], timeCounter, producerService, consumerService), "producer-actor")
+  def processCSVWithForEachSink(source: Source[String, Any],
+                                producerService: ProducerService): Unit = {
+    val simpleSink: Sink[Restaurant, Future[Done]] = Sink.foreach(producerService.sendMessage)
+    processCSV(source, System.nanoTime(), producerService, simpleSink)
+  }
 
-    val source = FileIO.fromPath(dataCSVFile)
-      .via(Framing.delimiter(ByteString("\n"), 1024 * 35, allowTruncation = true))
-      .map { line =>
-        line.utf8String
-      }
 
-    var lineNum = 0
-    val mapRestaurant = Flow[String].map{ strLine =>
+  private def processCSV(source: Source[String, Any], timeCounter: Long,
+                               producerService: ProducerService, sink: Sink[Restaurant, Any]): Unit = {
+
+    val mapRestaurant = Flow[String].map { strLine =>
       lineNum += 1
       producerService.strToRestaurantWithHandler(lineNum, Left(strLine))
     }
 
-    //val actorSink = Sink.actorRefWithBackpressure(producerActor, InitStream, Ack, Complete, StreamFailure)
-    val decider: Supervision.Decider ={
-      case ex : StringToRestaurantMapException =>
+    val decider: Supervision.Decider = {
+      case ex: StringToRestaurantMapException =>
         log.error(ex.message)
         Supervision.Resume
-      case _ =>
-        log.error("Unexpected error-")
-        Supervision.Resume
     }
 
-    val simpleSink: Sink[Restaurant, Future[Done]] = Sink.foreach(producerService.sendMessage)
-
-    val stream  =
-      source
+    val result = source
       .via(mapRestaurant)
       .withAttributes(ActorAttributes.supervisionStrategy(decider))
-      .runWith(simpleSink)
+      .runWith(sink)
 
-    stream.onComplete {
-      case Failure(exception) =>
-        log.info(s"${exception.getMessage}")
-      case Success(_) =>
-        log.info(s"stream completed in:${System.nanoTime() - timeCounter}" )
+    result match {
+      case stream @ (_: Future[Done]) =>
+        stream.onComplete{
+          case Success(_) => log.info(s"stream completed in: ${System.nanoTime() - timeCounter} line processed $lineNum")
+          case Failure(exception) => log.error(s"${exception.getMessage}")
+        }
+      case _ =>
     }
+
   }
 }

@@ -1,6 +1,7 @@
 package com.applaudo.crosstraining.akkastreams.services
 
 import com.applaudo.crosstraining.akastreams.models.ConsumerClasses.RestaurantToEntitiesException
+import com.applaudo.crosstraining.akkastreams.BaseServiceTest
 import org.scalatestplus.mockito.MockitoSugar
 
 class ConsumerServiceTest extends BaseServiceTest

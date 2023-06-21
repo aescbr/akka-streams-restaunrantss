@@ -1,6 +1,7 @@
 package com.applaudo.crosstraining.akkastreams.services
 
 import com.applaudo.crosstraining.akastreams.models.ProducerClasses.StringToRestaurantMapException
+import com.applaudo.crosstraining.akkastreams.BaseServiceTest
 
 class ProducerServiceTest  extends BaseServiceTest {
   "producer service" should {

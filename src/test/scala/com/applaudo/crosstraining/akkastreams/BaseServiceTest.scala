@@ -1,4 +1,4 @@
-package com.applaudo.crosstraining.akkastreams.services
+package com.applaudo.crosstraining.akkastreams
 
 import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender, TestKit}
