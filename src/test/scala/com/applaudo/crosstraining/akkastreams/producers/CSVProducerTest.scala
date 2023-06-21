@@ -6,7 +6,6 @@ import com.applaudo.crosstraining.akastreams.producers.CSVProducer
 import com.applaudo.crosstraining.akastreams.services.ProducerServiceImpl
 import com.applaudo.crosstraining.akkastreams.BaseServiceTest
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito
 import org.mockito.Mockito.{doNothing, when}
 
 class CSVProducerTest extends BaseServiceTest{

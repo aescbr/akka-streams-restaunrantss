@@ -1,41 +1,29 @@
 package com.applaudo.crosstraining.akastreams.consumers
 
 import akka.NotUsed
-import akka.actor.{ActorSystem, Props}
+import akka.actor.{ActorRef, ActorSystem}
+import akka.kafka.ConsumerMessage
 import akka.kafka.ConsumerMessage.CommittableMessage
-import akka.kafka.ConsumerSettings
 import akka.kafka.scaladsl.Consumer
-import akka.stream.scaladsl.{Flow, Sink}
+import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.stream.{ActorAttributes, Supervision}
 import com.applaudo.crosstraining.akastreams.actors.ProducerActor
 import com.applaudo.crosstraining.akastreams.models.ConsumerClasses.RestaurantToEntitiesException
-import com.applaudo.crosstraining.akastreams.services.{ConsumerServiceImpl, ProducerServiceImpl}
-import org.apache.kafka.common.serialization.StringDeserializer
-import org.slf4j.LoggerFactory
+import com.applaudo.crosstraining.akastreams.services.ConsumerService
+import org.slf4j.{Logger, LoggerFactory}
 
-object RestaurantConsumer {
+class RestaurantConsumer()(implicit system: ActorSystem) {
 
   import ProducerActor._
-  import akka.kafka.Subscriptions
   import com.applaudo.crosstraining.akastreams.models.ProducerClasses._
-  import com.applaudo.crosstraining.akastreams.config.KafkaBrokerConfig._
 
-  def main(args: Array[String]): Unit = {
+  val log: Logger = LoggerFactory.getLogger(getClass)
 
-    implicit val system: ActorSystem = ActorSystem.create("restaurant-consumer")
-    val timeCounter = System.nanoTime()
-    val producerService = ProducerServiceImpl(restaurantProducer)
-    val consumerService = ConsumerServiceImpl(restaurantEntityProducer, sourceURLProducer, websiteProducer)
-
-    val producerActor = system.actorOf(Props(classOf[ProducerActor], timeCounter,
-      producerService, consumerService), "producer-actor")
-
-    val log = LoggerFactory.getLogger(getClass)
-
-    val consumerSettings: ConsumerSettings[String, RestaurantMessage] =
-      ConsumerSettings[String, RestaurantMessage](system, new StringDeserializer, new RestaurantMessageDeserializer)
-        .withBootstrapServers(s"$brokerHost:$brokerPort")
-        .withGroupId(groupId)
+  def normalizeRestaurant(source: Source[ConsumerMessage
+  .CommittableMessage[String, RestaurantMessage], Consumer.Control],
+                          consumerService: ConsumerService,
+                          producerActor: ActorRef
+                         ): Unit = {
 
     val mapRestaurant: Flow[CommittableMessage[String, RestaurantMessage], Any, NotUsed] =
       Flow[CommittableMessage[String, RestaurantMessage]].map { msg =>
@@ -44,15 +32,13 @@ object RestaurantConsumer {
       }
 
     val sink = Sink.actorRefWithBackpressure(producerActor, InitStream, Ack, Complete, StreamFailure)
-    val decider: Supervision.Decider ={
-      case ex : RestaurantToEntitiesException =>
+    val decider: Supervision.Decider = {
+      case ex: RestaurantToEntitiesException =>
         log.error(ex.message)
         Supervision.Resume
     }
 
-    //val consumer =
-    Consumer
-      .committableSource(consumerSettings, Subscriptions.topics(sourceRestaurantTopic))
+    source
       .via(mapRestaurant)
       .withAttributes(ActorAttributes.supervisionStrategy(decider))
       .runWith(sink)
