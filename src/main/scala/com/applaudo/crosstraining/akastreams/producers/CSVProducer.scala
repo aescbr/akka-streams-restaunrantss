@@ -1,6 +1,5 @@
 package com.applaudo.crosstraining.akastreams.producers
 
-import akka.Done
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.scaladsl.{Flow, Sink}
 import akka.stream.{ActorAttributes, Supervision}
@@ -21,17 +20,28 @@ class CSVProducer()(implicit system: ActorSystem) {
   def processCSVRestaurants(producerSource: ProducerSource, producerActor: ActorRef,
                             producerService: ProducerService): Unit = {
 
-    val simpleSink: Sink[Restaurant, Future[Done]] = Sink.foreach(producerService.sendMessage)
-    processCSV(producerSource, System.nanoTime(), producerService, simpleSink)
+    processCSV(producerSource, System.nanoTime(), producerService)
   }
 
   private def processCSV(producerSource: ProducerSource, timeCounter: Long,
-                         producerService: ProducerService, sink: Sink[Restaurant, Future[Done]]): Unit = {
+                         producerService: ProducerService): Unit = {
 
     val decider: Supervision.Decider = {
       case ex: StringToRestaurantMapException =>
         log.error(ex.message)
         Supervision.Resume
+    }
+    val sendMessageFlow = Flow[Restaurant].map { restaurant =>
+      val result = producerService.sendMessage(restaurant)
+      val asScala = Future(result.get())
+
+      asScala.onComplete {
+        case Success(metadata) =>
+          log.info(s"message sent key: ${restaurant.id} " +
+            s"- topic: ${metadata.topic()} partition: ${metadata.partition()}")
+        case Failure(ex) =>
+          throw StringToRestaurantMapException(s"${ex.getClass.getName} | ${ex.getMessage} - $restaurant")
+      }
     }
 
     val graph = producerSource match {
@@ -51,8 +61,9 @@ class CSVProducer()(implicit system: ActorSystem) {
     }
 
     val result = graph
+      .via(sendMessageFlow)
       .withAttributes(ActorAttributes.supervisionStrategy(decider))
-      .runWith(sink)
+      .runWith(Sink.ignore)
 
     result.onComplete {
       case Failure(exception) =>
