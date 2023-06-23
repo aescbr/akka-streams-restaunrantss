@@ -5,7 +5,7 @@ import com.applaudo.crosstraining.akastreams.models.schemas.ProducerSchemas.rest
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, RecordMetadata}
 
 import java.util.concurrent.Future
-
+import scala.util.{Failure, Success, Try}
 
 trait ProducerService {
   def strToRestaurant(numLine: Long, input: ProducerInput): Restaurant
@@ -16,18 +16,19 @@ case class ProducerServiceImpl(
   restaurantProducer: KafkaProducer[String, RestaurantMessage]) extends ProducerService {
 
   override def strToRestaurant(numLine: Long, input: ProducerInput): Restaurant = {
-    try {
+    val result : Try[Restaurant] = {
       input match {
         case StrInput(strLine) =>
-          val data = strLine.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)").toList
-          mapListToRestaurant(data)
+         Try(mapListToRestaurant(strLine.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)").toList))
         case ListInput(list) =>
-          mapListToRestaurant(list)
+          Try(mapListToRestaurant(list))
       }
     }
-    catch {
-      case ex: RuntimeException =>
+
+    result match {
+      case Failure(ex) =>
         throw StringToRestaurantMapException(s"${ex.getClass.getName} | ${ex.getMessage} - in line: $numLine")
+      case Success(restaurant) => restaurant
     }
   }
 

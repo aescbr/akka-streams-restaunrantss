@@ -2,7 +2,7 @@ package com.applaudo.crosstraining.akkastreams.producers
 
 import akka.stream.scaladsl.Source
 import akka.testkit.TestProbe
-import com.applaudo.crosstraining.akastreams.models.ProducerClasses.{ListStrSource, StrSource}
+import com.applaudo.crosstraining.akastreams.models.ProducerClasses.{ListStrSource, StrSource, StringToRestaurantMapException}
 import com.applaudo.crosstraining.akastreams.producers.CSVProducer
 import com.applaudo.crosstraining.akastreams.services.ProducerServiceImpl
 import com.applaudo.crosstraining.akkastreams.BaseServiceTest
@@ -62,6 +62,17 @@ class CSVProducerTest extends BaseServiceTest {
       assert(result.isInstanceOf[Unit])
     }
 
+    "complete stream when exception received" in {
+      when(mockService.strToRestaurant(any(), any()))
+        .thenThrow(StringToRestaurantMapException("Invalid input"))
+
+    val result: Unit = producer.processCSVRestaurants(
+        StrSource(Source.single("Hello")),
+        actorProbe.ref,
+        mockService
+      )
+      assert(result.isInstanceOf[Unit])
+    }
   }
 }
 

@@ -39,14 +39,14 @@ class CSVProducer()(implicit system: ActorSystem) {
         strSource
           .zipWithIndex
           .via(Flow[(String, Long)].map { tuple =>
-            producerService.strToRestaurant(tuple._2, StrInput(tuple._1))
+            producerService.strToRestaurant(tuple._2 + 1, StrInput(tuple._1))
           })
 
       case ListStrSource(listSource) =>
         listSource
           .zipWithIndex
           .via(Flow[(List[String], Long)].map { tuple =>
-            producerService.strToRestaurant(tuple._2, ListInput(tuple._1))
+            producerService.strToRestaurant(tuple._2 + 1, ListInput(tuple._1))
           })
     }
 
@@ -61,5 +61,4 @@ class CSVProducer()(implicit system: ActorSystem) {
         log.info(s"Stream completed in ${System.nanoTime() - timeCounter}")
     }
   }
-  private def zipElementWithIndex[E](): (E, Long) = ???
 }
