@@ -33,7 +33,7 @@ object CSVProducerAlt {
     var lineNum = 0
     val mapRestaurant = Flow[List[String]].map{ list =>
       lineNum += 1
-      producerService.strToRestaurantWithHandler(lineNum, Right(list))
+      producerService.strToRestaurant(lineNum, ListInput(list))
     }
 
     val decider: Supervision.Decider ={

@@ -2,8 +2,10 @@ package com.applaudo.crosstraining.akastreams.producers
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.stream.IOResult
+import akka.stream.alpakka.csv.scaladsl.CsvParsing
 import akka.stream.scaladsl.{FileIO, Framing, Source}
 import akka.util.ByteString
+import com.applaudo.crosstraining.akastreams.models.ProducerClasses.StrSource
 import com.applaudo.crosstraining.akastreams.services.{ConsumerService, ProducerService}
 
 import java.nio.file.{Path, Paths}
@@ -31,8 +33,12 @@ object MainProducer {
       line.utf8String
     }
 
+  val source: Source[List[String], Future[IOResult]] = FileIO.fromPath(dataCSVFile)
+    .via(CsvParsing.lineScanner(maximumLineLength = 1024 * 35))
+    .map(_.map(_.utf8String))
+
   def main(args: Array[String]): Unit = {
     val csvProducer = new CSVProducer
-    csvProducer.processCSVWithForEachSink(csvSource, producerService)
+    csvProducer.processCSVRestaurants(StrSource(csvSource), producerActor, producerService)
   }
 }

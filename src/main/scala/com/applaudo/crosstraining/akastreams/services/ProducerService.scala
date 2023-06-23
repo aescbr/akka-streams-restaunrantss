@@ -2,24 +2,26 @@ package com.applaudo.crosstraining.akastreams.services
 import com.applaudo.crosstraining.akastreams.config.KafkaBrokerConfig.restaurantTopic
 import com.applaudo.crosstraining.akastreams.models.ProducerClasses._
 import com.applaudo.crosstraining.akastreams.models.schemas.ProducerSchemas.restaurantSchema
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, RecordMetadata}
+
+import java.util.concurrent.Future
 
 
 trait ProducerService {
-  def strToRestaurantWithHandler(numLine: Integer, input: Either[String, List[String]]): Restaurant
-  def sendMessage(restaurant: Restaurant): Unit
+  def strToRestaurant(numLine: Long, input: ProducerInput): Restaurant
+  def sendMessage(restaurant: Restaurant):  Future[RecordMetadata]
 }
 
 case class ProducerServiceImpl(
   restaurantProducer: KafkaProducer[String, RestaurantMessage]) extends ProducerService {
 
-  override def strToRestaurantWithHandler(numLine: Integer, input: Either[String, List[String]]): Restaurant = {
+  override def strToRestaurant(numLine: Long, input: ProducerInput): Restaurant = {
     try {
       input match {
-        case Left(strLine) =>
+        case StrInput(strLine) =>
           val data = strLine.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)").toList
           mapListToRestaurant(data)
-        case Right(list) =>
+        case ListInput(list) =>
           mapListToRestaurant(list)
       }
     }
@@ -50,7 +52,7 @@ case class ProducerServiceImpl(
       name, postalCode, province, sourceURLs, websites)
   }
 
-  override def sendMessage(restaurant: Restaurant): Unit = {
+  override def sendMessage(restaurant: Restaurant): Future[RecordMetadata] = {
     val value = RestaurantMessage(schema = restaurantSchema, payload = restaurant)
     val record = new ProducerRecord(restaurantTopic, restaurant.id, value)
     restaurantProducer.send(record)
