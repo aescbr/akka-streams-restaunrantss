@@ -1,7 +1,7 @@
 package com.applaudo.crosstraining.akastreams.services
 import com.applaudo.crosstraining.akastreams.config.KafkaBrokerConfig.restaurantTopic
 import com.applaudo.crosstraining.akastreams.models.ProducerClasses._
-import com.applaudo.crosstraining.akastreams.models.schemas.ProducerSchemas.restaurantSchema
+import com.applaudo.crosstraining.akastreams.models.schemas.ProducerSchemas._
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, RecordMetadata}
 
 import java.util.concurrent.Future
@@ -13,7 +13,8 @@ trait ProducerService {
 }
 
 case class ProducerServiceImpl(
-  restaurantProducer: KafkaProducer[String, RestaurantMessage]) extends ProducerService {
+  restaurantProducer: KafkaProducer[String, RestaurantMessage], restaurantSchema: Schema,
+  restaurantTopic: String) extends ProducerService {
 
   override def strToRestaurant(numLine: Long, input: ProducerInput): Restaurant = {
     val result : Try[Restaurant] = {

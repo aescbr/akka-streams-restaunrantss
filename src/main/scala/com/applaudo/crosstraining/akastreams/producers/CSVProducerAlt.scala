@@ -5,6 +5,7 @@ import akka.actor.ActorSystem
 import akka.stream.alpakka.csv.scaladsl.CsvParsing
 import akka.stream.scaladsl.{FileIO, Flow, Sink}
 import akka.stream.{ActorAttributes, Supervision}
+import com.applaudo.crosstraining.akastreams.models.schemas.ProducerSchemas.restaurantSchema
 import com.applaudo.crosstraining.akastreams.services.ProducerServiceImpl
 import org.slf4j.LoggerFactory
 
@@ -24,7 +25,7 @@ object CSVProducerAlt {
     val dataCSVFile = Paths.get("src/main/resources/data.csv")
     val timeCounter = System.nanoTime()
     val log = LoggerFactory.getLogger(getClass)
-    val producerService = ProducerServiceImpl(restaurantProducer)
+    val producerService = ProducerServiceImpl(restaurantProducer, restaurantSchema, restaurantTopic)
 
     val source = FileIO.fromPath(dataCSVFile)
       .via(CsvParsing.lineScanner(maximumLineLength = 1024 * 35))

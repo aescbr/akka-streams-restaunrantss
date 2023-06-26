@@ -2,6 +2,10 @@ package com.applaudo.crosstraining.akkastreams.services
 
 import com.applaudo.crosstraining.akastreams.models.ProducerClasses._
 import com.applaudo.crosstraining.akkastreams.BaseServiceTest
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.when
+
+import java.util.concurrent.CompletableFuture
 
 class ProducerServiceTest  extends BaseServiceTest {
   "producer service" should {
@@ -26,6 +30,15 @@ class ProducerServiceTest  extends BaseServiceTest {
     "throw exception when non valid input list" in {
          assertThrows[StringToRestaurantMapException](producerService
         .strToRestaurant(1, ListInput(nonValidRestaurantInputList)))
+    }
+
+    "return metadata whe message sent successfully " in {
+      when(mockProducer.send(any()))
+        .thenReturn(CompletableFuture.completedFuture(metadata))
+
+      val result = producerService.sendMessage(restaurantExpected)
+      val metaResult = result.get()
+      assert( metaResult.topic() == metadata.topic())
     }
   }
 }

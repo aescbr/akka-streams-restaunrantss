@@ -5,8 +5,10 @@ import akka.testkit.{ImplicitSender, TestKit}
 import com.applaudo.crosstraining.akastreams.models.ConsumerClasses._
 import com.applaudo.crosstraining.akastreams.models.ProducerClasses.{Restaurant, RestaurantMessage}
 import com.applaudo.crosstraining.akastreams.models.schemas.ConsumerSchemas._
+import com.applaudo.crosstraining.akastreams.models.schemas.ProducerSchemas.restaurantSchema
 import com.applaudo.crosstraining.akastreams.services.{ConsumerService, ConsumerServiceImpl, ProducerService, ProducerServiceImpl}
-import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.clients.producer.{KafkaProducer, RecordMetadata}
+import org.apache.kafka.common.TopicPartition
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -20,7 +22,7 @@ class BaseServiceTest extends TestKit(ActorSystem("system"))
   with MockitoSugar{
 
   val mockProducer: KafkaProducer[String, RestaurantMessage] = mock[KafkaProducer[String, RestaurantMessage]]
-  var producerService :ProducerService = ProducerServiceImpl(mockProducer)
+  var producerService :ProducerService = ProducerServiceImpl(mockProducer, restaurantSchema, "test-topic")
 
   val mockRestaurantEntityProducer: KafkaProducer[String, RestaurantEntityMessage] =
     mock[KafkaProducer[String, RestaurantEntityMessage]]
@@ -33,6 +35,9 @@ class BaseServiceTest extends TestKit(ActorSystem("system"))
 
   var consumerService :ConsumerService = ConsumerServiceImpl(mockRestaurantEntityProducer,
     mockSourceURLProducer, mockWebsiteProducer)
+
+  val topicPartition = new TopicPartition("test-partition", 1)
+  val metadata = new RecordMetadata(topicPartition, 0, 0, 0, 0, 0)
 
   val inputRestaurantStr: String =
     "id,2017-06-19T16:06:25Z,2018-04-07T23:40:34Z,1232 main street,Fast Food,city,US," +

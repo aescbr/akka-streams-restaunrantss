@@ -37,8 +37,7 @@ class RestaurantConsumer()(implicit system: ActorSystem) {
         log.error(ex.message)
         Supervision.Resume
       case ex =>
-        log.error(ex.getMessage)
-        log.error("unexpected error")
+        log.error(s"unexpected error ${ex.getMessage}")
         Supervision.Stop
     }
 

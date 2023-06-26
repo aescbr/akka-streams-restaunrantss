@@ -6,10 +6,14 @@ import akka.stream.alpakka.csv.scaladsl.CsvParsing
 import akka.stream.scaladsl.{FileIO, Framing, Source}
 import akka.util.ByteString
 import com.applaudo.crosstraining.akastreams.models.ProducerClasses.{ListStrSource, StrSource}
+import com.applaudo.crosstraining.akastreams.models.schemas.ProducerSchemas.restaurantSchema
 import com.applaudo.crosstraining.akastreams.services.{ConsumerService, ProducerService}
+import org.slf4j.{Logger, LoggerFactory}
 
 import java.nio.file.{Path, Paths}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.util.{Failure, Success}
 
 object MainProducer {
   implicit val system: ActorSystem = ActorSystem("csv-producer")
@@ -19,10 +23,11 @@ object MainProducer {
   import com.applaudo.crosstraining.akastreams.services.{ConsumerServiceImpl, ProducerServiceImpl}
 
   val dataCSVFile: Path = Paths.get("src/main/resources/data.csv")
-  val producerService: ProducerService = ProducerServiceImpl(restaurantProducer)
+  val producerService: ProducerService = ProducerServiceImpl(restaurantProducer, restaurantSchema, restaurantTopic)
   val consumerService: ConsumerService = ConsumerServiceImpl(restaurantEntityProducer,
     sourceURLProducer, websiteProducer)
   val timeCounter: Long = System.nanoTime()
+  val log: Logger = LoggerFactory.getLogger(getClass)
 
   val producerActor: ActorRef = system.actorOf(
     Props(classOf[ProducerActor], timeCounter, producerService, consumerService), "producer-actor")
@@ -39,6 +44,14 @@ object MainProducer {
 
   def main(args: Array[String]): Unit = {
     val csvProducer = new CSVProducer
-    csvProducer.processCSVRestaurants(ListStrSource(source), producerActor, producerService)
+    val result = csvProducer.processCSVRestaurants(ListStrSource(source), producerActor, producerService)
+
+    result.onComplete {
+      case Failure(ex) =>
+        log.error(ex.getMessage)
+      case Success(_) =>
+        log.info(s"Stream completed in: ${System.nanoTime() - timeCounter}")
+
+    }
   }
 }

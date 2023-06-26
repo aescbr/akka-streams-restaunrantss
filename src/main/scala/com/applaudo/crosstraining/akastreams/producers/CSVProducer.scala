@@ -1,5 +1,6 @@
 package com.applaudo.crosstraining.akastreams.producers
 
+import akka.Done
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.scaladsl.{Flow, Sink}
 import akka.stream.{ActorAttributes, Supervision}
@@ -18,19 +19,20 @@ class CSVProducer()(implicit system: ActorSystem) {
   val log: Logger = LoggerFactory.getLogger(getClass)
 
   def processCSVRestaurants(producerSource: ProducerSource, producerActor: ActorRef,
-                            producerService: ProducerService): Unit = {
+                            producerService: ProducerService): Future[Done] = {
 
     processCSV(producerSource, System.nanoTime(), producerService)
   }
 
   private def processCSV(producerSource: ProducerSource, timeCounter: Long,
-                         producerService: ProducerService): Unit = {
+                         producerService: ProducerService): Future[Done] = {
 
     val decider: Supervision.Decider = {
       case ex: StringToRestaurantMapException =>
         log.error(ex.message)
         Supervision.Resume
     }
+
     val sendMessageFlow = Flow[Restaurant].map { restaurant =>
       val result = producerService.sendMessage(restaurant)
       val asScala = Future(result.get())
@@ -40,7 +42,7 @@ class CSVProducer()(implicit system: ActorSystem) {
           log.info(s"message sent key: ${restaurant.id} " +
             s"- topic: ${metadata.topic()} partition: ${metadata.partition()}")
         case Failure(ex) =>
-          throw StringToRestaurantMapException(s"${ex.getClass.getName} | ${ex.getMessage} - $restaurant")
+          throw StringToRestaurantMapException(s"${ex.getClass.getName} | ${ex.getMessage} - key: ${restaurant.id}")//replace custom error
       }
     }
 
@@ -60,16 +62,11 @@ class CSVProducer()(implicit system: ActorSystem) {
           })
     }
 
-    val result = graph
+    graph
       .via(sendMessageFlow)
       .withAttributes(ActorAttributes.supervisionStrategy(decider))
       .runWith(Sink.ignore)
-
-    result.onComplete {
-      case Failure(exception) =>
-        log.error(exception.getMessage)
-      case Success(_) =>
-        log.info(s"Stream completed in ${System.nanoTime() - timeCounter}")
-    }
   }
+
+
 }
