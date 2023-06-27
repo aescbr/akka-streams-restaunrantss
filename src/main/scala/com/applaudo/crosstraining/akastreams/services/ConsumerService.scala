@@ -1,19 +1,22 @@
 package com.applaudo.crosstraining.akastreams.services
 
-import com.applaudo.crosstraining.akastreams.config.KafkaBrokerConfig._
 import com.applaudo.crosstraining.akastreams.models.ConsumerClasses._
 import com.applaudo.crosstraining.akastreams.models.ProducerClasses.Restaurant
 import com.applaudo.crosstraining.akastreams.models.schemas.ConsumerSchemas._
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, RecordMetadata}
+
+import java.util.concurrent.Future
 
 trait ConsumerService {
   def restaurantToEntities(restaurant: Restaurant): Any
-  def sendRestaurantEntities(restaurantEntitiesMessage: RestaurantEntitiesMessage):Unit
+  def sendRestaurantEntities(restaurantEntitiesMessage: RestaurantEntitiesMessage): Set[Future[RecordMetadata]]
 }
 
 case class ConsumerServiceImpl(restaurantEntityProducer: KafkaProducer[String, RestaurantEntityMessage],
                                sourceURLProducer: KafkaProducer[String, SourceURLMessage],
-                               websiteProducer: KafkaProducer[String, WebsiteMessage]) extends ConsumerService {
+                               websiteProducer: KafkaProducer[String, WebsiteMessage],
+                               schemaURL: Schema, schemaWebsite: Schema, restaurantEntitySchema: Schema,
+                               restaurantEntityTopic: String, sourceURLTopic: String, websiteTopic: String) extends ConsumerService {
 
   override def restaurantToEntities(restaurant: Restaurant): Any = {
     try{
@@ -70,20 +73,24 @@ case class ConsumerServiceImpl(restaurantEntityProducer: KafkaProducer[String, R
     )
   }
 
-  override def sendRestaurantEntities(restaurantEntitiesMessage: RestaurantEntitiesMessage):Unit = {
+  override def sendRestaurantEntities(
+    restaurantEntitiesMessage: RestaurantEntitiesMessage): Set[Future[RecordMetadata]] = {
     val id = restaurantEntitiesMessage.restaurantMessage.payload.id
     val record1 = new ProducerRecord[String, RestaurantEntityMessage](restaurantEntityTopic, id,
       restaurantEntitiesMessage.restaurantMessage)
-    restaurantEntityProducer.send(record1)
 
-    restaurantEntitiesMessage.urls.foreach{url =>
+    val restaurantMetadata = restaurantEntityProducer.send(record1)
+
+    val urlsMetadata = restaurantEntitiesMessage.urls.map{url =>
       val recordURL = new ProducerRecord[String, SourceURLMessage](sourceURLTopic, id,url)
       sourceURLProducer.send(recordURL)
     }
 
-    restaurantEntitiesMessage.websites.foreach{website =>
+    val websitesMetadata = restaurantEntitiesMessage.websites.map{website =>
       val recordWebsite = new ProducerRecord[String, WebsiteMessage](websiteTopic, id,website)
       websiteProducer.send(recordWebsite)
     }
+    val list = restaurantMetadata +: (urlsMetadata ++: websitesMetadata)
+    list.toSet
   }
 }

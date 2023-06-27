@@ -4,6 +4,12 @@ import akka.actor.{Actor, ActorLogging, ActorSystem}
 import com.applaudo.crosstraining.akastreams.models.ConsumerClasses._
 import com.applaudo.crosstraining.akastreams.models.ProducerClasses._
 import com.applaudo.crosstraining.akastreams.services.{ConsumerService, ProducerService}
+import org.apache.kafka.clients.producer.RecordMetadata
+
+import java.util.concurrent.{Future => JFuture}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.util.{Failure, Success}
 
 object ProducerActor {
   case object InitStream
@@ -25,11 +31,25 @@ class ProducerActor(counter: Long, producerService: ProducerService,
       log.info(s"sending ${restaurant.id}")
       sender ! Ack
     case restaurantEntitiesMessage: RestaurantEntitiesMessage =>
-      consumerService.sendRestaurantEntities(restaurantEntitiesMessage)
       log.info(s"processing ${restaurantEntitiesMessage.restaurantMessage.payload.id}")
+      val results = consumerService.sendRestaurantEntities(restaurantEntitiesMessage)
+      processResults(results)
       sender ! Ack
     case _ : Complete.type =>
       log.info(s"stream completed! in: ${System.nanoTime() - counter}" )
+  }
+
+  private def processResults(results:  Set[JFuture[RecordMetadata]]): Unit = {
+    results.foreach{ result =>
+      val futureResult = Future {result.get()}
+      futureResult.onComplete {
+        case Failure(ex) =>
+          log.error(ex.getMessage)
+        case Success(metadata) =>
+          log.info(s"message sent to " +
+            s" topic: ${metadata.topic()} partition: ${metadata.partition()}")
+      }
+    }
   }
 
 }

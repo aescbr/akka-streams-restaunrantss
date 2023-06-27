@@ -2,6 +2,7 @@ package com.applaudo.crosstraining.akkastreams
 
 import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender, TestKit}
+import com.applaudo.crosstraining.akastreams.config.KafkaBrokerConfig.{restaurantEntityTopic, sourceURLTopic, websiteTopic}
 import com.applaudo.crosstraining.akastreams.models.ConsumerClasses._
 import com.applaudo.crosstraining.akastreams.models.ProducerClasses.{Restaurant, RestaurantMessage}
 import com.applaudo.crosstraining.akastreams.models.schemas.ConsumerSchemas._
@@ -34,7 +35,8 @@ class BaseServiceTest extends TestKit(ActorSystem("system"))
     mock[KafkaProducer[String,WebsiteMessage]]
 
   var consumerService :ConsumerService = ConsumerServiceImpl(mockRestaurantEntityProducer,
-    mockSourceURLProducer, mockWebsiteProducer)
+    mockSourceURLProducer, mockWebsiteProducer, schemaURL, schemaWebsite, restaurantEntitySchema, "restaurant.entity.topic",
+    "source.url.topic", "website.topic")
 
   val topicPartition = new TopicPartition("test-partition", 1)
   val metadata = new RecordMetadata(topicPartition, 0, 0, 0, 0, 0)

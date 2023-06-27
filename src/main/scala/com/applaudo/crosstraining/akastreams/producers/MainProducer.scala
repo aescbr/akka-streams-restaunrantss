@@ -6,6 +6,7 @@ import akka.stream.alpakka.csv.scaladsl.CsvParsing
 import akka.stream.scaladsl.{FileIO, Framing, Source}
 import akka.util.ByteString
 import com.applaudo.crosstraining.akastreams.models.ProducerClasses.{ListStrSource, StrSource}
+import com.applaudo.crosstraining.akastreams.models.schemas.ConsumerSchemas.{restaurantEntitySchema, schemaURL, schemaWebsite}
 import com.applaudo.crosstraining.akastreams.models.schemas.ProducerSchemas.restaurantSchema
 import com.applaudo.crosstraining.akastreams.services.{ConsumerService, ProducerService}
 import org.slf4j.{Logger, LoggerFactory}
@@ -25,7 +26,8 @@ object MainProducer {
   val dataCSVFile: Path = Paths.get("src/main/resources/data.csv")
   val producerService: ProducerService = ProducerServiceImpl(restaurantProducer, restaurantSchema, restaurantTopic)
   val consumerService: ConsumerService = ConsumerServiceImpl(restaurantEntityProducer,
-    sourceURLProducer, websiteProducer)
+    sourceURLProducer, websiteProducer, schemaURL, schemaWebsite, restaurantEntitySchema, restaurantEntityTopic,
+    sourceURLTopic, websiteTopic)
   val timeCounter: Long = System.nanoTime()
   val log: Logger = LoggerFactory.getLogger(getClass)
 

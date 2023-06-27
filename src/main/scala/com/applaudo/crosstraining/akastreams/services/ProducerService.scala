@@ -1,5 +1,4 @@
 package com.applaudo.crosstraining.akastreams.services
-import com.applaudo.crosstraining.akastreams.config.KafkaBrokerConfig.restaurantTopic
 import com.applaudo.crosstraining.akastreams.models.ProducerClasses._
 import com.applaudo.crosstraining.akastreams.models.schemas.ProducerSchemas._
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, RecordMetadata}
