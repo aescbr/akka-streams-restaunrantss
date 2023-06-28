@@ -6,9 +6,10 @@ import com.applaudo.crosstraining.akastreams.models.schemas.ConsumerSchemas._
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, RecordMetadata}
 
 import java.util.concurrent.Future
+import scala.util.{Failure, Success, Try}
 
 trait ConsumerService {
-  def restaurantToEntities(restaurant: Restaurant): Any
+  def restaurantToEntities(restaurant: Restaurant): RestaurantEntitiesMessage
   def sendRestaurantEntities(restaurantEntitiesMessage: RestaurantEntitiesMessage): Set[Future[RecordMetadata]]
 }
 
@@ -18,21 +19,20 @@ case class ConsumerServiceImpl(restaurantEntityProducer: KafkaProducer[String, R
                                schemaURL: Schema, schemaWebsite: Schema, restaurantEntitySchema: Schema,
                                restaurantEntityTopic: String, sourceURLTopic: String, websiteTopic: String) extends ConsumerService {
 
-  override def restaurantToEntities(restaurant: Restaurant): Any = {
-    try{
+   override def restaurantToEntities(restaurant: Restaurant): RestaurantEntitiesMessage  = {
+    val result = Try(
       RestaurantEntitiesMessage(
         restaurantToRestaurantEntity(restaurant),
         restaurantToSourceURLs(restaurant),
         restaurantToWebsite(restaurant)
-      )
-    } catch {
-      case ex: NullPointerException =>
-        throw RestaurantToEntitiesException(s"${ex.getClass.getName} " +
-          s"| ${ex.getMessage} - restaurant : $restaurant")
-      case ex: RuntimeException =>
-        throw RestaurantToEntitiesException(s"${ex.getClass.getName} " +
-          s"| ${ex.getMessage} - restaurant id: ${restaurant.id}")
-    }
+      ))
+
+     result match {
+       case Failure(ex) =>
+         throw RestaurantToEntitiesException(s"${ex.getClass.getName} " +
+                 s"| ${ex.getMessage} - restaurant id: ${restaurant.id}")
+       case Success(restaurantMessage) => restaurantMessage
+     }
   }
 
   private def restaurantToSourceURLs(restaurant: Restaurant): List[SourceURLMessage] = {

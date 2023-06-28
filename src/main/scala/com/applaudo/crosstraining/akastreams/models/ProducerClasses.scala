@@ -12,6 +12,7 @@ object ProducerClasses {
 
   case class RestaurantMessage(schema: Schema, payload: Restaurant)
   case class StringToRestaurantMapException(message: String) extends RuntimeException
+  case class MessageNotDeliveredException(message: String) extends RuntimeException
 
   sealed trait ProducerInput
   case class StrInput(strLine: String) extends ProducerInput

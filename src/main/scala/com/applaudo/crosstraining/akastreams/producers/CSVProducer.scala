@@ -1,7 +1,7 @@
 package com.applaudo.crosstraining.akastreams.producers
 
 import akka.Done
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Flow, Sink}
 import akka.stream.{ActorAttributes, Supervision}
 import org.slf4j.{Logger, LoggerFactory}
@@ -18,31 +18,37 @@ class CSVProducer()(implicit system: ActorSystem) {
 
   val log: Logger = LoggerFactory.getLogger(getClass)
 
-  def processCSVRestaurants(producerSource: ProducerSource, producerActor: ActorRef,
+  def processCSVRestaurants(producerSource: ProducerSource,
                             producerService: ProducerService): Future[Done] = {
 
-    processCSV(producerSource, System.nanoTime(), producerService)
+    processCSV(producerSource, producerService)
   }
 
-  private def processCSV(producerSource: ProducerSource, timeCounter: Long,
+  private def processCSV(producerSource: ProducerSource,
                          producerService: ProducerService): Future[Done] = {
 
     val decider: Supervision.Decider = {
       case ex: StringToRestaurantMapException =>
         log.error(ex.message)
         Supervision.Resume
+      case ex : MessageNotDeliveredException =>
+        log.error(ex.message)
+        Supervision.Stop
+      case ex =>
+        log.error(s"unexpected error ${ex.getMessage}")
+        Supervision.Stop
     }
 
     val sendMessageFlow = Flow[Restaurant].map { restaurant =>
       val result = producerService.sendMessage(restaurant)
-      val asScala = Future(result.get())
+      val futureResult = Future(result.get())
 
-      asScala.onComplete {
+      futureResult.onComplete {
         case Success(metadata) =>
           log.info(s"message sent key: ${restaurant.id} " +
             s"- topic: ${metadata.topic()} partition: ${metadata.partition()}")
         case Failure(ex) =>
-          throw StringToRestaurantMapException(s"${ex.getClass.getName} | ${ex.getMessage} - key: ${restaurant.id}")//replace custom error
+          throw MessageNotDeliveredException(s"${ex.getClass.getName} | ${ex.getMessage} - key: ${restaurant.id}")
       }
     }
 
@@ -67,6 +73,4 @@ class CSVProducer()(implicit system: ActorSystem) {
       .withAttributes(ActorAttributes.supervisionStrategy(decider))
       .runWith(Sink.ignore)
   }
-
-
 }

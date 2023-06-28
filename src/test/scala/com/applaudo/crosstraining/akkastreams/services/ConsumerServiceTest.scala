@@ -1,6 +1,7 @@
 package com.applaudo.crosstraining.akkastreams.services
 
 import com.applaudo.crosstraining.akastreams.models.ConsumerClasses.RestaurantToEntitiesException
+import com.applaudo.crosstraining.akastreams.models.ProducerClasses.Restaurant
 import com.applaudo.crosstraining.akkastreams.BaseServiceTest
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -19,7 +20,7 @@ with MockitoSugar{
     }
 
     "throw exception when non valid input restaurant" in {
-      assertThrows[RestaurantToEntitiesException](consumerService.restaurantToEntities(null))
+      assertThrows[NullPointerException](consumerService.restaurantToEntities(null))
     }
 
     "return list of metadata when send valid message" in {

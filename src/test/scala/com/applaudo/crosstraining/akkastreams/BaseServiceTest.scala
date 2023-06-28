@@ -2,7 +2,6 @@ package com.applaudo.crosstraining.akkastreams
 
 import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender, TestKit}
-import com.applaudo.crosstraining.akastreams.config.KafkaBrokerConfig.{restaurantEntityTopic, sourceURLTopic, websiteTopic}
 import com.applaudo.crosstraining.akastreams.models.ConsumerClasses._
 import com.applaudo.crosstraining.akastreams.models.ProducerClasses.{Restaurant, RestaurantMessage}
 import com.applaudo.crosstraining.akastreams.models.schemas.ConsumerSchemas._

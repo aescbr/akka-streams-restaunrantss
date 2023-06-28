@@ -8,7 +8,6 @@ import com.applaudo.crosstraining.akastreams.producers.CSVProducer
 import com.applaudo.crosstraining.akastreams.services.{ProducerService, ProducerServiceImpl}
 import com.applaudo.crosstraining.akkastreams.BaseServiceTest
 import org.apache.kafka.clients.producer.RecordMetadata
-import org.apache.kafka.common.TopicPartition
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{doReturn, when}
 
@@ -29,23 +28,7 @@ class CSVProducerTest extends BaseServiceTest {
   }
 
   "csv producer" should {
-    "process string input with actor" in {
-      when(mockService.strToRestaurant(any(), any()))
-        .thenReturn(restaurantExpected)
-
-      when(mockService.sendMessage(any()))
-        .thenReturn(futureMetadata)
-
-      val result = producer.processCSVRestaurants(
-        StrSource(Source.single(inputRestaurantStr)),
-        actorProbe.ref,
-        mockService
-      )
-
-      result.map{ r => assert(r.isInstanceOf[Done])}
-    }
-
-    "process string input with for each" in {
+    "process string input" in {
       when(mockService.strToRestaurant(any(), any()))
         .thenReturn(restaurantExpected)
 
@@ -53,7 +36,6 @@ class CSVProducerTest extends BaseServiceTest {
 
       val result = producer.processCSVRestaurants(
         ListStrSource(Source.single(List(inputRestaurantStr))),
-        actorProbe.ref,
         mockService
       )
 
@@ -66,7 +48,6 @@ class CSVProducerTest extends BaseServiceTest {
 
     val result = producer.processCSVRestaurants(
         StrSource(Source.single("Hello")),
-        actorProbe.ref,
         mockService
       )
       result.map{ r => assert(r.isInstanceOf[Done])}

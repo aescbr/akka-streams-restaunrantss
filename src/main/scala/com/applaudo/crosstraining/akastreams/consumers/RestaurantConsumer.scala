@@ -5,10 +5,10 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.kafka.ConsumerMessage
 import akka.kafka.ConsumerMessage.CommittableMessage
 import akka.kafka.scaladsl.Consumer
-import akka.stream.scaladsl.{Flow, Sink, Source}
+import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.stream.{ActorAttributes, Supervision}
 import com.applaudo.crosstraining.akastreams.actors.ProducerActor
-import com.applaudo.crosstraining.akastreams.models.ConsumerClasses.RestaurantToEntitiesException
+import com.applaudo.crosstraining.akastreams.models.ConsumerClasses.{RestaurantEntitiesMessage, RestaurantToEntitiesException}
 import com.applaudo.crosstraining.akastreams.services.ConsumerService
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -25,10 +25,10 @@ class RestaurantConsumer()(implicit system: ActorSystem) {
                           producerActor: ActorRef
                          ): Unit = {
 
-    val mapRestaurant: Flow[CommittableMessage[String, RestaurantMessage], Any, NotUsed] =
+    val mapRestaurant: Flow[CommittableMessage[String, RestaurantMessage], RestaurantEntitiesMessage, NotUsed] =
       Flow[CommittableMessage[String, RestaurantMessage]].map { msg =>
-        val restaurant = msg.record.value().payload
-        consumerService.restaurantToEntities(restaurant)
+        val recordMsg = msg.record.value()
+        consumerService.restaurantToEntities(recordMsg.payload)
       }
 
     val sink = Sink.actorRefWithBackpressure(producerActor, InitStream, Ack, Complete, StreamFailure)
