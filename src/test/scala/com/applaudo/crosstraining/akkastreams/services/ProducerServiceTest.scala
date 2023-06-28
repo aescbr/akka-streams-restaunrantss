@@ -6,30 +6,31 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 
 import java.util.concurrent.CompletableFuture
+import scala.util.{Failure, Success}
 
 class ProducerServiceTest  extends BaseServiceTest {
   "producer service" should {
     "map valid input string to a restaurant" in{
 
-      val result = producerService.strToRestaurant(1,StrInput(inputRestaurantStr))
-      assert(restaurantExpected == result)
+      val result = producerService.strToRestaurant(StrInput(inputRestaurantStr))
+      assert(Success(restaurantExpected) == result)
     }
 
-    "throw exception when non valid input string" in {
+    "return Failure when non valid input string" in {
       val inputStr = "1234,2023-06-08T16:06:25Z"
 
-      assertThrows[StringToRestaurantMapException](producerService
-        .strToRestaurant(1,StrInput(inputStr)))
+      val result = producerService.strToRestaurant(StrInput(inputStr))
+      assert(result.isInstanceOf[Failure[Restaurant]])
     }
 
     "map valid input list to a restaurant" in {
-      val result = producerService.strToRestaurant(1, ListInput(inputRestaurantList))
-      assert(restaurantExpected == result)
+      val result = producerService.strToRestaurant(ListInput(inputRestaurantList))
+      assert(Success(restaurantExpected) == result)
     }
 
-    "throw exception when non valid input list" in {
-         assertThrows[StringToRestaurantMapException](producerService
-        .strToRestaurant(1, ListInput(nonValidRestaurantInputList)))
+    "return Failure when non valid input list" in {
+      val result = producerService.strToRestaurant(ListInput(nonValidRestaurantInputList))
+      assert(result.isInstanceOf[Failure[Restaurant]])
     }
 
     "return metadata whe message sent successfully " in {

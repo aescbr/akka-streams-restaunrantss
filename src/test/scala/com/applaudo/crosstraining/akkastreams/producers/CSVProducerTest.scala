@@ -13,6 +13,7 @@ import org.mockito.Mockito.{doReturn, when}
 
 import java.util.concurrent.{CompletableFuture, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.Success
 
 
 class CSVProducerTest extends BaseServiceTest {
@@ -29,8 +30,8 @@ class CSVProducerTest extends BaseServiceTest {
 
   "csv producer" should {
     "process string input" in {
-      when(mockService.strToRestaurant(any(), any()))
-        .thenReturn(restaurantExpected)
+      when(mockService.strToRestaurant(any()))
+        .thenReturn(Success(restaurantExpected))
 
       doReturn(futureMetadata).when(mockService).sendMessage(any())
 
@@ -43,7 +44,7 @@ class CSVProducerTest extends BaseServiceTest {
     }
 
     "complete stream when exception received" in {
-      when(mockService.strToRestaurant(any(), any()))
+      when(mockService.strToRestaurant(any()))
         .thenThrow(StringToRestaurantMapException("Invalid input"))
 
     val result = producer.processCSVRestaurants(

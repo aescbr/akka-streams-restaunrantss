@@ -2,13 +2,13 @@ package com.applaudo.crosstraining.akastreams.producers
 
 import akka.Done
 import akka.actor.ActorSystem
-import akka.stream.scaladsl.{Flow, Sink}
+import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.stream.{ActorAttributes, Supervision}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 
 class CSVProducer()(implicit system: ActorSystem) {
@@ -54,17 +54,17 @@ class CSVProducer()(implicit system: ActorSystem) {
 
     val graph = producerSource match {
       case StrSource(strSource) =>
-        strSource
-          .zipWithIndex
+        addIndex(strSource)
           .via(Flow[(String, Long)].map { tuple =>
-            producerService.strToRestaurant(tuple._2 + 1, StrInput(tuple._1))
+            processMapResult(tuple._2,
+              producerService.strToRestaurant(StrInput(tuple._1)))
           })
 
       case ListStrSource(listSource) =>
-        listSource
-          .zipWithIndex
+        addIndex(listSource)
           .via(Flow[(List[String], Long)].map { tuple =>
-            producerService.strToRestaurant(tuple._2 + 1, ListInput(tuple._1))
+            processMapResult(tuple._2,
+              producerService.strToRestaurant(ListInput(tuple._1)))
           })
     }
 
@@ -72,5 +72,21 @@ class CSVProducer()(implicit system: ActorSystem) {
       .via(sendMessageFlow)
       .withAttributes(ActorAttributes.supervisionStrategy(decider))
       .runWith(Sink.ignore)
+  }
+
+  private def processMapResult(lineNum: Long, result: Try[Restaurant]): Restaurant = {
+    result match {
+      case Failure(ex) =>
+        throw StringToRestaurantMapException(s"${ex.getClass.getName} | ${ex.getMessage} - in line: $lineNum")
+      case Success(restaurant) => restaurant
+    }
+  }
+
+  private def addIndex[E](source : Source[E, Any]) = {
+    var i = 0L
+    source.map {element =>
+      i += 1
+      (element, i)
+    }
   }
 }
