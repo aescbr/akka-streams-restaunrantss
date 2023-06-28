@@ -31,22 +31,23 @@ class ProducerActor(counter: Long, producerService: ProducerService,
       log.info(s"sending ${restaurant.id}")
       sender ! Ack
     case restaurantEntitiesMessage: RestaurantEntitiesMessage =>
-      log.info(s"processing ${restaurantEntitiesMessage.restaurantMessage.payload.id}")
+      val msg = restaurantEntitiesMessage.restaurantMessage.payload
+      log.info(s"processing ${msg.id}")
       val results = consumerService.sendRestaurantEntities(restaurantEntitiesMessage)
-      processResults(results)
+      processResults(msg.id, results)
       sender ! Ack
     case _ : Complete.type =>
       log.info(s"stream completed! in: ${System.nanoTime() - counter}" )
   }
 
-  private def processResults(results:  Set[JFuture[RecordMetadata]]): Unit = {
+  private def processResults(restaurantId :String , results:  Set[JFuture[RecordMetadata]]): Unit = {
     results.foreach{ result =>
       val futureResult = Future {result.get()}
       futureResult.onComplete {
         case Failure(ex) =>
           log.error(ex.getMessage)
         case Success(metadata) =>
-          log.info(s"message sent to " +
+          log.info(s"message sent to key: $restaurantId" +
             s" topic: ${metadata.topic()} partition: ${metadata.partition()}")
       }
     }

@@ -18,13 +18,13 @@ class CSVProducer()(implicit system: ActorSystem) {
 
   val log: Logger = LoggerFactory.getLogger(getClass)
 
-  def processCSVRestaurants(producerSource: ProducerSource,
+  def processCSVRestaurants[S](producerSource: Source[S, Any],
                             producerService: ProducerService): Future[Done] = {
 
     processCSV(producerSource, producerService)
   }
 
-  private def processCSV(producerSource: ProducerSource,
+  private def processCSV[S](producerSource: Source[S, Any],
                          producerService: ProducerService): Future[Done] = {
 
     val decider: Supervision.Decider = {
@@ -52,23 +52,8 @@ class CSVProducer()(implicit system: ActorSystem) {
       }
     }
 
-    val graph = producerSource match {
-      case StrSource(strSource) =>
-        addIndex(strSource)
-          .via(Flow[(String, Long)].map { tuple =>
-            processMapResult(tuple._2,
-              producerService.strToRestaurant(StrInput(tuple._1)))
-          })
-
-      case ListStrSource(listSource) =>
-        addIndex(listSource)
-          .via(Flow[(List[String], Long)].map { tuple =>
-            processMapResult(tuple._2,
-              producerService.strToRestaurant(ListInput(tuple._1)))
-          })
-    }
-
-    graph
+    val graphAlt = buildGraph(producerSource, producerService)
+    graphAlt
       .via(sendMessageFlow)
       .withAttributes(ActorAttributes.supervisionStrategy(decider))
       .runWith(Sink.ignore)
@@ -88,5 +73,13 @@ class CSVProducer()(implicit system: ActorSystem) {
       i += 1
       (element, i)
     }
+  }
+
+  private def buildGraph[E](source : Source[E, Any], producerService: ProducerService) = {
+    addIndex(source)
+    .via(Flow[(E, Long)].map { tuple =>
+      processMapResult(tuple._2,
+        producerService.strToRestaurantAlt(tuple._1))
+    })
   }
 }

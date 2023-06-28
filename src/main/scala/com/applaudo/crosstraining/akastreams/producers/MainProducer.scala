@@ -34,19 +34,19 @@ object MainProducer {
   val producerActor: ActorRef = system.actorOf(
     Props(classOf[ProducerActor], timeCounter, producerService, consumerService), "producer-actor")
 
-  val csvSource: Source[String, Future[IOResult]] = FileIO.fromPath(dataCSVFile)
+  val csvRegexSource: Source[String, Future[IOResult]] = FileIO.fromPath(dataCSVFile)
     .via(Framing.delimiter(ByteString("\n"), 1024 * 35, allowTruncation = true))
     .map { line =>
       line.utf8String
     }
 
-  val source: Source[List[String], Future[IOResult]] = FileIO.fromPath(dataCSVFile)
+  val csvSource: Source[List[String], Future[IOResult]] = FileIO.fromPath(dataCSVFile)
     .via(CsvParsing.lineScanner(maximumLineLength = 1024 * 35))
     .map(_.map(_.utf8String))
 
   def main(args: Array[String]): Unit = {
     val csvProducer = new CSVProducer
-    val result = csvProducer.processCSVRestaurants(ListStrSource(source), producerActor, producerService)
+    val result = csvProducer.processCSVRestaurants(csvSource, producerService)
 
     result.onComplete {
       case Failure(ex) =>

@@ -33,6 +33,29 @@ class ProducerServiceTest  extends BaseServiceTest {
       assert(result.isInstanceOf[Failure[Restaurant]])
     }
 
+    "map valid input string to a restaurant alternative" in{
+
+      val result = producerService.strToRestaurantAlt(inputRestaurantStr)
+      assert(Success(restaurantExpected) == result)
+    }
+
+    "return Failure when non valid input string alternative" in {
+      val inputStr = "1234,2023-06-08T16:06:25Z"
+
+      val result = producerService.strToRestaurantAlt(inputStr)
+      assert(result.isInstanceOf[Failure[Restaurant]])
+    }
+
+    "map valid input list to a restaurant alternative" in {
+      val result = producerService.strToRestaurantAlt(inputRestaurantList)
+      assert(Success(restaurantExpected) == result)
+    }
+
+    "return Failure when non valid input list alternative" in {
+      val result = producerService.strToRestaurantAlt(nonValidRestaurantInputList)
+      assert(result.isInstanceOf[Failure[Restaurant]])
+    }
+
     "return metadata whe message sent successfully " in {
       when(mockProducer.send(any()))
         .thenReturn(CompletableFuture.completedFuture(metadata))

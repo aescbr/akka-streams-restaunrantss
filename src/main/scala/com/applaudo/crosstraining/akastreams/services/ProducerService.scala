@@ -9,6 +9,7 @@ import scala.util.Try
 trait ProducerService {
   def strToRestaurant(input: ProducerInput): Try[Restaurant]
   def sendMessage(restaurant: Restaurant):  Future[RecordMetadata]
+  def strToRestaurantAlt[E](input: E): Try[Restaurant]
 }
 
 case class ProducerServiceImpl(
@@ -55,6 +56,17 @@ case class ProducerServiceImpl(
 
   private def processMapper(list: List[String]): Try[Restaurant] = {
     Try(mapListToRestaurant(list))
+  }
+
+  override def strToRestaurantAlt[E](input: E): Try[Restaurant] = {
+    {
+      input match {
+        case strLine: String =>
+          processMapper(strLine.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)").toList)
+        case list : List[String] =>
+          processMapper(list)
+      }
+    }
   }
 
 }

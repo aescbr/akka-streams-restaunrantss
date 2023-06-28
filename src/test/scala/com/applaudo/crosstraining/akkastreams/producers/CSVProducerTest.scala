@@ -36,7 +36,7 @@ class CSVProducerTest extends BaseServiceTest {
       doReturn(futureMetadata).when(mockService).sendMessage(any())
 
       val result = producer.processCSVRestaurants(
-        ListStrSource(Source.single(List(inputRestaurantStr))),
+        Source.single(List(inputRestaurantStr)),
         mockService
       )
 
@@ -48,7 +48,7 @@ class CSVProducerTest extends BaseServiceTest {
         .thenThrow(StringToRestaurantMapException("Invalid input"))
 
     val result = producer.processCSVRestaurants(
-        StrSource(Source.single("Hello")),
+        Source.single("Hello"),
         mockService
       )
       result.map{ r => assert(r.isInstanceOf[Done])}
