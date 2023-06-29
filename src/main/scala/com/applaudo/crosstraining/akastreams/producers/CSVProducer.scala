@@ -1,6 +1,6 @@
 package com.applaudo.crosstraining.akastreams.producers
 
-import akka.Done
+import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.stream.{ActorAttributes, Supervision}
@@ -19,19 +19,19 @@ class CSVProducer()(implicit system: ActorSystem) {
   val log: Logger = LoggerFactory.getLogger(getClass)
 
   def processCSVRestaurants[S](producerSource: Source[S, Any],
-                            producerService: ProducerService): Future[Done] = {
+                               producerService: ProducerService): Future[Done] = {
 
     processCSV(producerSource, producerService)
   }
 
   private def processCSV[S](producerSource: Source[S, Any],
-                         producerService: ProducerService): Future[Done] = {
+                            producerService: ProducerService): Future[Done] = {
 
     val decider: Supervision.Decider = {
       case ex: StringToRestaurantMapException =>
         log.error(ex.message)
         Supervision.Resume
-      case ex : MessageNotDeliveredException =>
+      case ex: MessageNotDeliveredException =>
         log.error(ex.message)
         Supervision.Stop
       case ex =>
@@ -52,14 +52,11 @@ class CSVProducer()(implicit system: ActorSystem) {
       }
     }
 
-    val graphAlt = buildGraph(producerSource, producerService)
-    graphAlt
-      .via(sendMessageFlow)
-      .withAttributes(ActorAttributes.supervisionStrategy(decider))
-      .runWith(Sink.ignore)
+    buildGraph(producerSource, producerService, sendMessageFlow, decider)
+
   }
 
-  private def processMapResult(lineNum: Long, result: Try[Restaurant]): Restaurant = {
+  private def processMapperResult(lineNum: Long, result: Try[Restaurant]): Restaurant = {
     result match {
       case Failure(ex) =>
         throw StringToRestaurantMapException(s"${ex.getClass.getName} | ${ex.getMessage} - in line: $lineNum")
@@ -67,19 +64,25 @@ class CSVProducer()(implicit system: ActorSystem) {
     }
   }
 
-  private def addIndex[E](source : Source[E, Any]) = {
+  private def addIndex[E](source: Source[E, Any]) = {
     var i = 0L
-    source.map {element =>
+    source.map { element =>
       i += 1
       (element, i)
     }
   }
 
-  private def buildGraph[E](source : Source[E, Any], producerService: ProducerService) = {
+  private def buildGraph[E](
+    source: Source[E, Any], producerService: ProducerService,
+    sendMessageFlow: Flow[Restaurant, Restaurant, NotUsed]#Repr[Unit], decider: Supervision.Decider): Future[Done] = {
+
     addIndex(source)
-    .via(Flow[(E, Long)].map { tuple =>
-      processMapResult(tuple._2,
-        producerService.strToRestaurantAlt(tuple._1))
-    })
+      .via(Flow[(E, Long)].map { tuple =>
+        processMapperResult(tuple._2,
+          producerService.strToRestaurantAlt(tuple._1))
+      })
+      .via(sendMessageFlow)
+      .withAttributes(ActorAttributes.supervisionStrategy(decider))
+      .runWith(Sink.ignore)
   }
 }
