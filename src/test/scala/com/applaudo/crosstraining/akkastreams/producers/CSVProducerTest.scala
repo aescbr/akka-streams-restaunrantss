@@ -3,7 +3,7 @@ package com.applaudo.crosstraining.akkastreams.producers
 import akka.Done
 import akka.stream.scaladsl.Source
 import akka.testkit.TestProbe
-import com.applaudo.crosstraining.akastreams.models.ProducerClasses.{ListStrSource, StrSource, StringToRestaurantMapException}
+import com.applaudo.crosstraining.akastreams.models.ProducerClasses.StringToRestaurantMapException
 import com.applaudo.crosstraining.akastreams.producers.CSVProducer
 import com.applaudo.crosstraining.akastreams.services.{ProducerService, ProducerServiceImpl}
 import com.applaudo.crosstraining.akkastreams.BaseServiceTest
@@ -22,14 +22,15 @@ class CSVProducerTest extends BaseServiceTest {
   var actorProbe: TestProbe = TestProbe()
   var mockService: ProducerService = mock[ProducerServiceImpl]
 
-  var futureMetadata: Future[RecordMetadata] = null
+  var optFuture: Option[Future[RecordMetadata]] = None
 
-  override def beforeAll(): Unit = {
-    futureMetadata = CompletableFuture.completedFuture(metadata)
+  override def beforeEach(): Unit = {
+    optFuture = Some(CompletableFuture.completedFuture(metadata))
   }
 
   "csv producer" should {
     "process string input" in {
+      val futureMetadata = optFuture.get
       when(mockService.strToRestaurant(any()))
         .thenReturn(Success(restaurantExpected))
 

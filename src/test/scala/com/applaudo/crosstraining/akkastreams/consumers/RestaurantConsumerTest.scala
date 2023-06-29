@@ -14,7 +14,7 @@ import com.applaudo.crosstraining.akastreams.services.{ConsumerService, Consumer
 import com.applaudo.crosstraining.akkastreams.BaseServiceTest
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{doNothing, when}
+import org.mockito.Mockito.when
 
 import java.util.concurrent.CompletableFuture
 
@@ -22,10 +22,11 @@ class RestaurantConsumerTest extends BaseServiceTest{
 
   var actorProbe: TestProbe = TestProbe()
   var mockConsumerService: ConsumerService = mock[ConsumerServiceImpl]
-  var consumer: RestaurantConsumer = null
-  var mockedKafkaConsumerSource: Source[ConsumerMessage.CommittableMessage[String, RestaurantMessage], Consumer.Control] = null
+  var optConsumer: Option[RestaurantConsumer] = None
+  var optSourceConsumer:
+    Option[Source[ConsumerMessage.CommittableMessage[String, RestaurantMessage], Consumer.Control]]= None
 
-  override def beforeAll(): Unit = {
+  override def beforeEach(): Unit = {
     val elements = (0 to 5).map { i =>
       val nextOffset = 1 + i
       ConsumerResultFactory.committableMessage(
@@ -36,14 +37,17 @@ class RestaurantConsumerTest extends BaseServiceTest{
       )
     }
 
-    mockedKafkaConsumerSource =
-      Source(elements).viaMat(ConsumerControlFactory.controlFlow())(Keep.right)
+    optSourceConsumer =
+     Some( Source(elements).viaMat(ConsumerControlFactory.controlFlow())(Keep.right))
 
-    consumer = new RestaurantConsumer()
+    optConsumer = Option(new RestaurantConsumer())
   }
 
   "restaurant consumer" should {
     "process messages and normalize" in {
+      val consumer = optConsumer.get
+      val mockedKafkaConsumerSource = optSourceConsumer.get
+
       when(mockConsumerService.restaurantToEntities(any()))
         .thenReturn(restaurantEntitiesExpected)
 
@@ -57,6 +61,8 @@ class RestaurantConsumerTest extends BaseServiceTest{
     }
 
     "throws custom exception when service fails" in{
+      val consumer = optConsumer.get
+      val mockedKafkaConsumerSource = optSourceConsumer.get
       when(mockConsumerService.restaurantToEntities(any()))
         .thenThrow(RestaurantToEntitiesException("normalizing error"))
       val result: Unit = consumer.normalizeRestaurant(mockedKafkaConsumerSource, mockConsumerService, actorProbe.ref)

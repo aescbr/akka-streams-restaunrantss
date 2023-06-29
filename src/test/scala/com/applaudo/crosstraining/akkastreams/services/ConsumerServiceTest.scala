@@ -1,7 +1,5 @@
 package com.applaudo.crosstraining.akkastreams.services
 
-import com.applaudo.crosstraining.akastreams.models.ConsumerClasses.RestaurantToEntitiesException
-import com.applaudo.crosstraining.akastreams.models.ProducerClasses.Restaurant
 import com.applaudo.crosstraining.akkastreams.BaseServiceTest
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when

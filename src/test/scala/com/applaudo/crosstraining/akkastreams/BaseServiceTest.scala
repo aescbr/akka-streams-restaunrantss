@@ -9,7 +9,7 @@ import com.applaudo.crosstraining.akastreams.models.schemas.ProducerSchemas.rest
 import com.applaudo.crosstraining.akastreams.services.{ConsumerService, ConsumerServiceImpl, ProducerService, ProducerServiceImpl}
 import org.apache.kafka.clients.producer.{KafkaProducer, RecordMetadata}
 import org.apache.kafka.common.TopicPartition
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
@@ -18,11 +18,11 @@ class BaseServiceTest extends TestKit(ActorSystem("system"))
   with ImplicitSender
   with AnyWordSpecLike
   with Matchers
-  with BeforeAndAfterAll
+  with BeforeAndAfterEach
   with MockitoSugar{
 
   val mockProducer: KafkaProducer[String, RestaurantMessage] = mock[KafkaProducer[String, RestaurantMessage]]
-  var producerService :ProducerService = ProducerServiceImpl(mockProducer, restaurantSchema, "test-topic")
+
 
   val mockRestaurantEntityProducer: KafkaProducer[String, RestaurantEntityMessage] =
     mock[KafkaProducer[String, RestaurantEntityMessage]]

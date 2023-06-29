@@ -27,6 +27,17 @@ case class ProducerServiceImpl(
     }
   }
 
+  override def strToRestaurantAlt[E](input: E): Try[Restaurant] = {
+    {
+      input match {
+        case strLine: String =>
+          processMapper(strLine.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)").toList)
+        case list : List[String] =>
+          processMapper(list)
+      }
+    }
+  }
+
   private def mapListToRestaurant(data : List[String]) : Restaurant = {
       val id = data.head
       val dateAdded = data(1)
@@ -57,16 +68,4 @@ case class ProducerServiceImpl(
   private def processMapper(list: List[String]): Try[Restaurant] = {
     Try(mapListToRestaurant(list))
   }
-
-  override def strToRestaurantAlt[E](input: E): Try[Restaurant] = {
-    {
-      input match {
-        case strLine: String =>
-          processMapper(strLine.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)").toList)
-        case list : List[String] =>
-          processMapper(list)
-      }
-    }
-  }
-
 }
